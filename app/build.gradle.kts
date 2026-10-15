@@ -5,6 +5,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+// Release signing comes from the environment, never from the repository: SEEKUR_RELEASE_STORE_FILE, _STORE_PASSWORD, _KEY_ALIAS, _KEY_PASSWORD.
+// Without all four, the release build is simply left unsigned.
+val signingEnv = listOf("STORE_FILE", "STORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD").associateWith { System.getenv("SEEKUR_RELEASE_$it")?.takeIf(String::isNotBlank) }
+val canSign = signingEnv.values.all { it != null }
+
 android {
     namespace = "com.everettpenne.seekur"
     compileSdk = 36
@@ -16,8 +21,15 @@ android {
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    signingConfigs {
+        if (canSign) create("release") {
+            storeFile = file(signingEnv.getValue("STORE_FILE")!!)
+            storePassword = signingEnv.getValue("STORE_PASSWORD"); keyAlias = signingEnv.getValue("KEY_ALIAS"); keyPassword = signingEnv.getValue("KEY_PASSWORD")
+        }
+    }
     buildTypes {
         getByName("release") {
+            if (canSign) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

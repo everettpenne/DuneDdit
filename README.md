@@ -37,6 +37,27 @@ A first port, built and unit-tested but **not yet exercised against live Reddit*
 tested against Reddit-shaped fixtures and a mock server (parsing, media extraction, comment flattening, URL building, write requests, error mapping).
 The UI was checked on an emulator with fixture posts. Expect rough edges when real data arrives.
 
+## Install on your phone
+
+Seekur is not on Google Play. Install the APK from the **[Releases page](https://github.com/everettpenne/DuneDdit/releases/latest)**.
+It needs **Android 12 or newer** (API 31); Android 13 or newer for the full glass lens.
+
+1. On your phone, open the latest release and download **`Seekur-<version>.apk`** (and, if you want to check it, `SHA256SUMS.txt`).
+2. Open the downloaded file. Android will say it can't install apps from this source: tap **Settings** and allow your browser (or the Files app) to
+   **install unknown apps**, then go back and tap **Install**. (On GrapheneOS this is the per-app "Install unknown apps" setting; turn it back off afterwards.)
+3. Open **Seekur**, go to **Profile › Settings › Accounts › Add account**, and sign in on Reddit's page. Home and Saved need an account.
+
+To update, install a newer APK over the old one; it is signed with the same key, so your accounts and settings stay.
+
+**Check the download (optional but sensible):** the release lists the APK's SHA-256. Compare it with `sha256sum Seekur-<version>.apk`, and the signing
+certificate with `apksigner verify --print-certs Seekur-<version>.apk`; the certificate SHA-256 is
+`c76163ce927f65df5869fe7b67f7e00ac81c8a254a5fc830590adef159724ff4`. Only install an APK from this repository's Releases page.
+
+**From a computer instead:** enable *Developer options › USB debugging*, then `adb install Seekur-<version>.apk`.
+
+**Build it yourself:** see below. A debug build (`./gradlew :app:installDebug`) is signed with your own debug key, so it will not install over the release one;
+uninstall one before installing the other.
+
 ## Build
 
 ```bash

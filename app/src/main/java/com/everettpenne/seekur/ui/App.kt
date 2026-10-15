@@ -78,14 +78,15 @@ fun SeekurApp(deepLink: Uri?) {
         }) else null
 
         CompositionLocalProvider(LocalImageViewer provides { urls, i -> viewer = urls to i }, LocalUriHandler provides uriHandler, LocalTabBar provides tabBar) {
-            // The plain page colour is also a glass backdrop, so controls drawn inside a scrolling page (which cannot sample that page) still
-            // have a surface to bend.
+            // The plain page colour is also a glass backdrop, so controls drawn inside a scrolling page still have a surface to bend. It records
+            // ONLY the colour, in a sibling of the screens: recording the screens themselves would make any glass control inside them sample a
+            // layer that contains it, which sends the renderer into endless recursion and crashes the app.
             val pageBackdrop = com.kyant.backdrop.backdrops.rememberLayerBackdrop()
             Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize().layerBackdrop(pageBackdrop).background(MaterialTheme.colorScheme.background))
                 CompositionLocalProvider(LocalGlassBackdrop provides pageBackdrop) {
-                    Box(Modifier.fillMaxSize().layerBackdrop(pageBackdrop).background(MaterialTheme.colorScheme.background)) {
-                        NavHost(navController, startDestination = Routes.FEED, modifier = Modifier.fillMaxSize(),
-                            enterTransition = { fadeIn() }, exitTransition = { fadeOut() }, popEnterTransition = { fadeIn() }, popExitTransition = { fadeOut() }) {
+                    NavHost(navController, startDestination = Routes.FEED, modifier = Modifier.fillMaxSize(),
+                        enterTransition = { fadeIn() }, exitTransition = { fadeOut() }, popEnterTransition = { fadeIn() }, popExitTransition = { fadeOut() }) {
                             composable(Routes.FEED) {
                                 PostsScreen(frontFeed, navigator, onSwitchFeed = { frontFeed = it; graph.settings.rememberFeed(it) }, onSignIn = { navController.navigate(Routes.LOGIN) })
                             }
@@ -113,7 +114,6 @@ fun SeekurApp(deepLink: Uri?) {
                             composable(Routes.SETTINGS) { SettingsScreen(onBack = { navController.popBackStack() }, onAccounts = { navController.navigate(Routes.ACCOUNTS) }) }
                             composable(Routes.ACCOUNTS) { AccountsScreen(onBack = { navController.popBackStack() }, onAdd = { navController.navigate(Routes.LOGIN) }) }
                             composable(Routes.LOGIN) { LoginScreen(onDone = { navController.popBackStack() }, onCancel = { navController.popBackStack() }) }
-                        }
                     }
                 }
             }
