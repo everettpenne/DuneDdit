@@ -13,8 +13,10 @@ sealed class ListingSort(val id: String, val label: String, val apiPath: String,
     data class Top(val period: TopPeriod) : ListingSort("top_${period.id}", period.label, "top", period.id)
 
     companion object {
-        val basic: List<ListingSort> = listOf(Best, Hot, New, Controversial)
-        val topOptions: List<ListingSort> = TopPeriod.entries.map { Top(it) }
+        // Computed, not stored: these objects are nested in this class, and a list built while the class is still initialising can capture a
+        // half-made (null) entry, depending on which of them the app touches first. That crashed the menu on a real phone.
+        val basic: List<ListingSort> get() = listOf(Best, Hot, New, Controversial)
+        val topOptions: List<ListingSort> get() = TopPeriod.entries.map { Top(it) }
 
         fun from(id: String?): ListingSort? = when (id) {
             "best" -> Best; "hot" -> Hot; "new" -> New; "controversial" -> Controversial

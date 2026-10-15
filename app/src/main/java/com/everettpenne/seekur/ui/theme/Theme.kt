@@ -15,7 +15,10 @@ import androidx.compose.ui.unit.sp
 
 /** The iOS-style palette: system blue accent, grouped backgrounds, and "secondary" fills for cards. */
 object Seekur {
-    val accent = Color(0xFF0A84FF)
+    /** The original app's orange: tab selection, icons, links, buttons. */
+    val accent = Color(0xFFFF9F0A)
+    /** Link cards use system blue, as the original does. */
+    val link = Color(0xFF0A84FF)
     val green = Color(0xFF34C759)
     val indigo = Color(0xFF5E5CE6)
     val red = Color(0xFFFF453A)
@@ -24,10 +27,10 @@ object Seekur {
 }
 
 private val Light = lightColorScheme(
-    primary = Seekur.accent, background = Color(0xFFF2F2F7), surface = Color(0xFFF2F2F7), onBackground = Color(0xFF1C1C1E), onSurface = Color(0xFF1C1C1E),
+    primary = Seekur.accent, onPrimary = Color.White, background = Color(0xFFF2F2F7), surface = Color(0xFFF2F2F7), onBackground = Color(0xFF1C1C1E), onSurface = Color(0xFF1C1C1E),
     surfaceVariant = Color.White, onSurfaceVariant = Color(0xFF6C6C70), outlineVariant = Color(0xFFD1D1D6), error = Seekur.red)
 private val Dark = darkColorScheme(
-    primary = Seekur.accent, background = Color(0xFF000000), surface = Color(0xFF000000), onBackground = Color(0xFFF2F2F7), onSurface = Color(0xFFF2F2F7),
+    primary = Seekur.accent, onPrimary = Color.White, background = Color(0xFF000000), surface = Color(0xFF000000), onBackground = Color(0xFFF2F2F7), onSurface = Color(0xFFF2F2F7),
     surfaceVariant = Color(0xFF1C1C1E), onSurfaceVariant = Color(0xFF98989D), outlineVariant = Color(0xFF38383A), error = Seekur.red)
 
 private val Type = Typography(
@@ -43,7 +46,11 @@ private val Type = Typography(
 
 @Composable
 fun SeekurTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) Dark else Light, typography = Type,
+    val scheme = if (isSystemInDarkTheme()) Dark else Light
+    MaterialTheme(colorScheme = scheme, typography = Type,
         shapes = Shapes(small = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-            large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)), content = content)
+            large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp))) {
+        // Text outside a Material surface takes this colour. Without it, titles and settings rows were black on the black dark-mode page.
+        androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides scheme.onBackground, content = content)
+    }
 }

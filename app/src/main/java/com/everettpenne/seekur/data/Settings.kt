@@ -21,6 +21,7 @@ class Settings(context: Context) {
     private val _autoplay = flag("autoplay", true)
     private val _muteOnPlay = flag("muteOnPlay", false)
     private val _blurNsfw = flag("blurNsfw", true)
+    private val _saveLocally = flag("saveLocally", false)
 
     val persistFeed: StateFlow<Boolean> = _persistFeed.asStateFlow()
     val persistSort: StateFlow<Boolean> = _persistSort.asStateFlow()
@@ -28,6 +29,8 @@ class Settings(context: Context) {
     val autoplay: StateFlow<Boolean> = _autoplay.asStateFlow()
     val muteOnPlay: StateFlow<Boolean> = _muteOnPlay.asStateFlow()
     val blurNsfw: StateFlow<Boolean> = _blurNsfw.asStateFlow()
+    /** When on, saving a post keeps it on this phone only and never touches the Reddit account. */
+    val saveLocally: StateFlow<Boolean> = _saveLocally.asStateFlow()
 
     fun setPersistFeed(v: Boolean) = set("persistFeed", _persistFeed, v)
     fun setPersistSort(v: Boolean) = set("persistSort", _persistSort, v)
@@ -35,6 +38,7 @@ class Settings(context: Context) {
     fun setAutoplay(v: Boolean) = set("autoplay", _autoplay, v)
     fun setMuteOnPlay(v: Boolean) = set("muteOnPlay", _muteOnPlay, v)
     fun setBlurNsfw(v: Boolean) = set("blurNsfw", _blurNsfw, v)
+    fun setSaveLocally(v: Boolean) = set("saveLocally", _saveLocally, v)
 
     /** The front-page feed to open with: the last one when "remember" is on, otherwise Home. */
     fun initialFeed(): PostFeed =

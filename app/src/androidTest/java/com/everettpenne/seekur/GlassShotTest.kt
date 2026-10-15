@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
@@ -36,32 +37,27 @@ class GlassShotTest {
     private val posts = listOf(
         post(1, MediaType.Image(GalleryImage("https://example.invalid/a.jpg", 1600, 900))),
         post(2, MediaType.None, "This is **bold**, this is *italic*, and here is a [link](https://example.com).\n\n- first\n- second"),
-        post(3, MediaType.Link(LinkMetadata("https://example.com/long/story/path", "example.com", null))),
+        post(3, MediaType.Link(LinkMetadata("https://example.com/long/story/path", "aurelien2022.substack.com", null))),
         post(4, MediaType.None, "Another text post with a few lines of text so the card is tall enough to scroll beneath the bars. ".repeat(3)),
         post(5, MediaType.None, "More"), post(6, MediaType.None, "Even more"),
     )
     private val nav = object : Navigator { override fun openPost(post: Post) {}; override fun openSubreddit(subreddit: Subreddit) {}; override fun openUser(username: String) {} }
 
     @Test fun shoot() {
-        var menu by mutableStateOf(false)
-        var on by mutableStateOf(true)
         compose.setContent {
             SeekurTheme {
                 val page = com.kyant.backdrop.backdrops.rememberLayerBackdrop()
                 CompositionLocalProvider(LocalGlassBackdrop provides page, LocalTabBar provides { GlassTabBar(Tab.Feed, {}) }) {
                     GlassScreen(bars = {
                         GlassTopBar("Home", modifier = Modifier.align(Alignment.TopCenter)) {
-                            Box { GlassIconButton(Icons.Rounded.SwapVert, "Sort", { menu = true })
-                                GlassDropdownMenu(menu, { menu = false }) { listOf("Best", "Hot", "New").forEach { GlassMenuItem(it, { menu = false }, selected = it == "Hot") } } }
-                            GlassIconButton(Icons.Rounded.ExpandCircleDown, "Feed", {})
+                            GlassActionPill {
+                                com.everettpenne.seekur.ui.screens.MenuPillIcon(Icons.Rounded.EmojiEvents, "Sort") { close -> listOf("Best", "Hot", "New").forEach { GlassMenuItem(it, close, selected = it == "Best") } }
+                                PillIcon(Icons.Rounded.Home, "Feed", {})
+                            }
                         }
                     }) {
                         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = topContentPadding(), bottom = bottomContentPadding(), start = 8.dp, end = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            item { Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                LiquidSwitch(on, { on = it }, Modifier.testTag("sw")); GlassButton("Plain", {}); GlassButton("Prominent", {}, prominent = true); GlassChip(true, {}) { androidx.compose.material3.Text("Chip") } } }
-                            items(posts) { PostCard(it, nav, compact = true) }
-                        }
+                            verticalArrangement = Arrangement.spacedBy(10.dp)) { items(posts) { PostCard(it, nav, compact = true) } }
                     }
                 }
             }
@@ -69,10 +65,33 @@ class GlassShotTest {
         compose.waitForIdle()
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         val dir = File(InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null), "shots").apply { mkdirs() }
-        Thread.sleep(1500); device.takeScreenshot(File(dir, "feed.png"))
-        compose.onNodeWithTag("sw").performTouchInput { down(centerRight) }
-        compose.mainClock.advanceTimeBy(500); Thread.sleep(500); device.takeScreenshot(File(dir, "held.png"))
-        compose.onNodeWithTag("sw").performTouchInput { up() }
-        menu = true; compose.waitForIdle(); Thread.sleep(1500); device.takeScreenshot(File(dir, "menu.png"))
+        Thread.sleep(2000); device.takeScreenshot(File(dir, "feed.png"))
+    }
+
+    @Test fun realScreens() {
+        compose.setContent {
+            SeekurTheme {
+                val page = com.kyant.backdrop.backdrops.rememberLayerBackdrop()
+                var screen by remember { mutableStateOf(0) }
+                val tabs: @Composable () -> Unit = { GlassTabBar(if (screen == 2) Tab.Search else Tab.Profile, {}) }
+                CompositionLocalProvider(LocalGlassBackdrop provides page, LocalTabBar provides tabs) {
+                    androidx.compose.foundation.layout.Box(Modifier.testTag("host")) {
+                        when (screen) {
+                            0 -> com.everettpenne.seekur.ui.screens.SettingsScreen({}, {})
+                            1 -> com.everettpenne.seekur.ui.screens.ProfileScreen(nav, {}, {}, {})
+                            else -> com.everettpenne.seekur.ui.screens.SearchScreen(nav)
+                        }
+                    }
+                }
+                LaunchedEffect(Unit) { snapshotFlow { shotStep }.collect { screen = it } }
+            }
+        }
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val dir = File(InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null), "shots").apply { mkdirs() }
+        for ((i, name) in listOf("settings", "profile", "search").withIndex()) {
+            shotStep = i; compose.waitForIdle(); Thread.sleep(2500); device.takeScreenshot(File(dir, "$name.png"))
+        }
     }
 }
+
+private var shotStep by mutableStateOf(0)

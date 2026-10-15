@@ -16,6 +16,7 @@
 - **Subreddits and users**: browse, search inside a subreddit, subscribe or follow, view about info.
 - **Profile**: Inbox, Saved, favourites, and every subscribed subreddit in alphabetical sections with a filter.
 - **Search**: subreddits and posts.
+- **Save on this device**: a setting that makes the bookmark keep a post on your phone only (with no account needed to read it later), leaving your Reddit saved list alone.
 - **Accounts**: several Reddit accounts, signed in on Reddit's own page; the session cookie is stored encrypted in the Android Keystore.
 - **Links**: Reddit links (`reddit.com`, `redd.it`) open inside the app.
 

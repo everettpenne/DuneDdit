@@ -114,12 +114,12 @@ fun PostDetailScreen(target: PostNavigation, nav: Navigator, onBack: () -> Unit)
     }
 
     GlassScreen(bars = {
-        GlassTopBar(vm.post?.subreddit?.displayNamePrefixed ?: "Post", subtitle = vm.post?.let { "${it.numComments.compact()} comments" } ?: "Loading…",
-            onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) {
+        GlassCenteredTopBar(vm.post?.subreddit?.displayNamePrefixed ?: "Post", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter),
+            subtitle = vm.post?.let { "${it.numComments.compact()} comments" } ?: "Loading…") {
             Box {
-                GlassIconButton(Icons.Rounded.SwapVert, "Sort comments by ${vm.sort.label}", { sortOpen = true })
+                GlassIconButton(vm.sort.icon(), "Sort comments by ${vm.sort.label}", { sortOpen = true }, tint = Seekur.accent)
                 GlassDropdownMenu(sortOpen, { sortOpen = false }) {
-                    CommentSort.entries.forEach { s -> GlassMenuItem(s.label, { sortOpen = false; vm.changeSort(s) }, selected = s == vm.sort) }
+                    CommentSort.entries.forEach { s -> GlassMenuItem(s.label, { sortOpen = false; vm.changeSort(s) }, icon = s.icon(), selected = s == vm.sort) }
                 }
             }
         }
@@ -139,6 +139,8 @@ fun PostDetailScreen(target: PostNavigation, nav: Navigator, onBack: () -> Unit)
                     }
                 }
                 items(comments, key = { it.id }) { c ->
+                    if (c.depth == 0 && c.id != comments.first().id) Box(Modifier.fillMaxWidth().padding(horizontal = (-16).dp).height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant))
+                    else if (c.id != comments.first().id) Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f)))
                     CommentRow(c, collapsed = c.id in vm.collapsed, onToggle = { vm.toggleCollapse(c.id) }, nav = nav, onReply = { replyTo = c.fullname },
                         modifier = Modifier.widthIn(max = 800.dp).animateContentSize())
                 }

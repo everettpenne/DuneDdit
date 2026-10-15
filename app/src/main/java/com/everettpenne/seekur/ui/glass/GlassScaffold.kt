@@ -3,6 +3,7 @@ package com.everettpenne.seekur.ui.glass
 import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -33,7 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import com.everettpenne.seekur.ui.theme.Seekur
 
-/** The bar across the top of a screen: a large title on the left, glass buttons on the right, fading into the page beneath. */
+/** The bar across the top of a root screen: a large title on the left, glass buttons on the right, fading into the page beneath. */
 @Composable
 fun GlassTopBar(title: String, modifier: Modifier = Modifier, subtitle: String? = null, onBack: (() -> Unit)? = null,
                 actions: @Composable RowScope.() -> Unit = {}) {
@@ -44,12 +45,46 @@ fun GlassTopBar(title: String, modifier: Modifier = Modifier, subtitle: String? 
             if (onBack != null) GlassIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.headlineMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    fontSize = if (onBack != null) 22.sp else 30.sp)
+                    fontSize = if (onBack != null) 26.sp else 34.sp)
                 if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
             actions()
         }
     }
+}
+
+/** The bar of a pushed screen (a post, settings): a back button, the title centred with an optional line under it, and a button on the right. */
+@Composable
+fun GlassCenteredTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, subtitle: String? = null, trailing: @Composable () -> Unit = {}) {
+    val bg = MaterialTheme.colorScheme.background
+    Box(modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(bg.copy(alpha = .94f), bg.copy(alpha = .8f), Color.Transparent)))) {
+        Box(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 14.dp).heightIn(min = 44.dp)) {
+            GlassIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack, Modifier.align(Alignment.CenterStart))
+            Column(Modifier.align(Alignment.Center).padding(horizontal = 56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
+            Box(Modifier.align(Alignment.CenterEnd)) { trailing() }
+        }
+    }
+}
+
+/** A glass capsule holding several icon buttons side by side, as the original's toolbar does. */
+@Composable
+fun GlassActionPill(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    val ink = glassPalette().ink
+    Row(modifier.height(48.dp)
+        .glassSurface(RoundedCornerShape(percent = 50), tint = ink.copy(alpha = .06f).compositeOver(glassPalette().tint), blurRadius = 6f, lensHeight = 12f, lensAmount = 24f, shadowed = false)
+        .padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, content = content)
+}
+
+/** One icon inside a [GlassActionPill]. */
+@Composable
+fun PillIcon(icon: ImageVector, description: String, onClick: () -> Unit, tint: Color = Seekur.accent) {
+    val press = rememberGlassPress()
+    Box(Modifier.size(width = 52.dp, height = 44.dp).graphicsLayer { with(press) { swell() } }.then(press.watcher)
+        .clickable(interactionSource = null, indication = null, role = Role.Button, onClick = onClick).semantics { contentDescription = description },
+        contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(26.dp)) }
 }
 
 /** How far the top bar reaches down, for the content's top padding (status bar plus the bar itself). */
@@ -61,28 +96,37 @@ enum class Tab(val route: String, val label: String, val icon: ImageVector) {
     Search("search", "Search", Icons.Rounded.Search),
 }
 
-/** The floating tab bar: a glass capsule at the bottom, the chosen tab lit as an accent lens. */
+/**
+ * The floating tab bar, laid out as in the original: a glass capsule with Feed and Profile at the bottom left (the chosen one in a darker
+ * pill with the accent), and Search as its own round glass button at the bottom right.
+ */
 @Composable
 fun GlassTabBar(selected: Tab?, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
     val ink = glassPalette().ink
-    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
-        Row(Modifier.widthIn(max = 420.dp).fillMaxWidth().height(64.dp)
-            .glassSurface(RoundedCornerShape(percent = 50), tint = ink.copy(alpha = .05f).compositeOver(glassPalette().tint), blurRadius = 8f, lensHeight = 24f, lensAmount = 32f)
-            .padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Tab.entries.forEach { tab ->
+    val tint = ink.copy(alpha = .05f).compositeOver(glassPalette().tint)
+    Row(modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.widthIn(max = 260.dp).weight(1f, fill = false).height(64.dp)
+            .glassSurface(RoundedCornerShape(percent = 50), tint = tint, blurRadius = 8f, lensHeight = 24f, lensAmount = 32f).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            listOf(Tab.Feed, Tab.Profile).forEach { tab ->
                 val press = rememberGlassPress()
                 val on = tab == selected
-                val shape = RoundedCornerShape(percent = 50)
-                Column(Modifier.weight(1f).fillMaxHeight()
-                    .then(if (on) Modifier.clip(shape).background(Seekur.accent.copy(alpha = .20f)) else Modifier)
+                Column(Modifier.weight(1f).fillMaxHeight().widthIn(min = 96.dp)
+                    .then(if (on) Modifier.clip(RoundedCornerShape(percent = 50)).background(ink.copy(alpha = .10f)) else Modifier)
                     .graphicsLayer { with(press) { swell() } }.then(press.light).then(press.watcher)
-                    .clickable(interactionSource = null, indication = null, role = Role.Tab) { onSelect(tab) }
-                    .semantics { contentDescription = tab.label },
+                    .clickable(interactionSource = null, indication = null, role = Role.Tab) { onSelect(tab) }.semantics { contentDescription = tab.label },
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(tab.icon, null, tint = if (on) Seekur.accent else ink.copy(alpha = .65f), modifier = Modifier.size(24.dp))
-                    Text(tab.label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (on) Seekur.accent else ink.copy(alpha = .65f))
+                    Icon(tab.icon, null, tint = if (on) Seekur.accent else ink, modifier = Modifier.size(26.dp))
+                    Text(tab.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (on) Seekur.accent else ink)
                 }
             }
+        }
+        Spacer(Modifier.weight(1f))
+        val press = rememberGlassPress()
+        Box(Modifier.size(64.dp).glassSurface(CircleShape, tint = tint, blurRadius = 8f, lensHeight = 22f, lensAmount = 32f)
+            .graphicsLayer { with(press) { swell() } }.then(press.light).then(press.watcher)
+            .clickable(interactionSource = null, indication = null, role = Role.Tab) { onSelect(Tab.Search) }.semantics { contentDescription = Tab.Search.label },
+            contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Search, null, tint = if (selected == Tab.Search) Seekur.accent else ink, modifier = Modifier.size(30.dp))
         }
     }
 }

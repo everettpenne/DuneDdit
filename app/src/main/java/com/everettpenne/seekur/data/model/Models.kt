@@ -4,9 +4,10 @@ import com.everettpenne.seekur.util.compact
 import com.everettpenne.seekur.util.parseHexColor
 import com.everettpenne.seekur.util.timeAgo
 import com.everettpenne.seekur.util.unescapeHtml
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
-data class Subreddit(
+@Serializable data class Subreddit(
     val id: String,
     val displayName: String,
     val displayNamePrefixed: String,
@@ -36,24 +37,24 @@ data class Subreddit(
     }
 }
 
-data class GalleryImage(val url: String, val width: Int = 0, val height: Int = 0) {
+@Serializable data class GalleryImage(val url: String, val width: Int = 0, val height: Int = 0) {
     val aspectRatio: Float? get() = if (width > 0 && height > 0) width.toFloat() / height else null
 }
-data class LinkMetadata(val url: String, val domain: String, val thumbnailUrl: String? = null)
+@Serializable data class LinkMetadata(val url: String, val domain: String, val thumbnailUrl: String? = null)
 
 /** What a post shows below its title. */
-sealed interface MediaType {
-    data object None : MediaType
-    data class Image(val image: GalleryImage) : MediaType
-    data class Gallery(val images: List<GalleryImage>) : MediaType
-    data class Video(val url: String, val width: Int = 0, val height: Int = 0, val thumbnailUrl: String? = null) : MediaType
-    data class YouTube(val videoId: String, val image: GalleryImage) : MediaType
-    data class Link(val metadata: LinkMetadata) : MediaType
-    data class Gif(val image: GalleryImage) : MediaType
-    data class Repost(val original: Post) : MediaType
+@Serializable sealed interface MediaType {
+    @Serializable data object None : MediaType
+    @Serializable data class Image(val image: GalleryImage) : MediaType
+    @Serializable data class Gallery(val images: List<GalleryImage>) : MediaType
+    @Serializable data class Video(val url: String, val width: Int = 0, val height: Int = 0, val thumbnailUrl: String? = null) : MediaType
+    @Serializable data class YouTube(val videoId: String, val image: GalleryImage) : MediaType
+    @Serializable data class Link(val metadata: LinkMetadata) : MediaType
+    @Serializable data class Gif(val image: GalleryImage) : MediaType
+    @Serializable data class Repost(val original: Post) : MediaType
 }
 
-data class Post(
+@Serializable data class Post(
     val id: String,
     val fullname: String,
     val title: String,

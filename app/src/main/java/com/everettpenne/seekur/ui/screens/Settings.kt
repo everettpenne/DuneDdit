@@ -38,31 +38,39 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit) {
     val blur by settings.blurNsfw.collectAsState()
     var cacheCleared by remember { mutableStateOf(false) }
 
-    GlassScreen(bars = { GlassTopBar("Settings", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
+    val saveLocally by settings.saveLocally.collectAsState()
+    val localCount by context.graph.localSaves.posts.collectAsState()
+    var cacheBytes by remember { mutableStateOf(SingletonImageLoader.get(context).diskCache?.size ?: 0L) }
+
+    GlassScreen(bars = { GlassCenteredTopBar("Settings", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = topContentPadding(), bottom = bottomContentPadding(), start = 16.dp, end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            Group("Reddit login") {
-                NavRow(Icons.Rounded.Person, "Accounts", accounts.firstOrNull { it.id == activeId }?.userName?.let { "u/$it" } ?: "Not signed in", onAccounts)
+            verticalArrangement = Arrangement.spacedBy(22.dp)) {
+            Group("Reddit Login") {
+                NavRow(Icons.Rounded.Person, "Accounts", accounts.firstOrNull { it.id == activeId }?.userName?.let { "u/$it" }, onAccounts)
+            }
+            Group("Saved Posts", footer = "On: the bookmark keeps a post on this phone only and never touches your Reddit account. " +
+                "${localCount.size} saved here. Your Reddit saved list is left as it is; turning this off shows it again.") {
+                SwitchRow(Icons.Rounded.PhoneAndroid, "Save on this device", saveLocally, settings::setSaveLocally)
             }
             Group("Feeds") {
-                SwitchRow(Icons.Rounded.Layers, "Remember selected feed", persistFeed, settings::setPersistFeed)
-                SwitchRow(Icons.Rounded.SwapVert, "Remember sort order", persistSort, settings::setPersistSort)
-                SwitchRow(Icons.Rounded.ExpandCircleDown, "Hide feed switcher", hideSwitcher, settings::setHideFeedSwitcher)
-                SwitchRow(Icons.Rounded.VisibilityOff, "Blur NSFW media", blur, settings::setBlurNsfw)
+                SwitchRow(Icons.Rounded.Layers, "Remember Selected Feed", persistFeed, settings::setPersistFeed)
+                SwitchRow(Icons.Rounded.SwapVert, "Remember Sort Order", persistSort, settings::setPersistSort)
+                SwitchRow(Icons.Rounded.ExpandCircleDown, "Hide Feed Switcher", hideSwitcher, settings::setHideFeedSwitcher)
+                SwitchRow(Icons.Rounded.VisibilityOff, "Blur NSFW Media", blur, settings::setBlurNsfw)
             }
-            Group("Playback") {
-                SwitchRow(Icons.Rounded.PlayArrow, "Autoplay videos", autoplay, settings::setAutoplay)
-                SwitchRow(Icons.AutoMirrored.Rounded.VolumeOff, "Mute on play", mute, settings::setMuteOnPlay)
+            Group("Playback Settings") {
+                SwitchRow(Icons.Rounded.PlayArrow, "Autoplay Videos", autoplay, settings::setAutoplay)
+                SwitchRow(Icons.AutoMirrored.Rounded.VolumeOff, "Mute on Play", mute, settings::setMuteOnPlay)
             }
             Group("Storage") {
-                NavRow(Icons.Rounded.DeleteSweep, "Clear image cache", if (cacheCleared) "Cleared" else "Free up space") {
+                NavRow(Icons.Rounded.DeleteSweep, "Clear Image Cache", "%.1f MB".format(cacheBytes / 1_048_576.0)) {
                     val loader = SingletonImageLoader.get(context)
-                    loader.memoryCache?.clear(); loader.diskCache?.clear(); cacheCleared = true
+                    loader.memoryCache?.clear(); loader.diskCache?.clear(); cacheBytes = loader.diskCache?.size ?: 0L
                 }
             }
             Group("About") {
                 NavRow(Icons.Rounded.Info, "Seekur ${BuildConfig.VERSION_NAME}", "An Android port of Lurker, with iOS-style liquid glass") {}
-                NavRow(Icons.Rounded.Code, "Open source", "MIT licensed. Based on SwiftDdit (Lurker) by Zabir Raihan") {
+                NavRow(Icons.Rounded.Code, "Open Source", "MIT licensed. Based on SwiftDdit (Lurker) by Zabir Raihan") {
                     context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/SilverMarcs/SwiftDdit")))
                 }
             }
@@ -73,10 +81,11 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit) {
 }
 
 @Composable
-private fun Group(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun Group(title: String, footer: String? = null, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
-        Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)), content = content)
+        Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 10.dp))
+        Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(26.dp)), content = content)
+        if (footer != null) Text(footer, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 10.dp))
     }
 }
 

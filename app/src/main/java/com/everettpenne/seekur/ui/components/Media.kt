@@ -39,6 +39,7 @@ import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import com.everettpenne.seekur.data.model.*
 import com.everettpenne.seekur.graph
+import com.everettpenne.seekur.ui.theme.Seekur
 
 /** Opens a set of images full screen; provided at the root so any post can use it. */
 val LocalImageViewer = compositionLocalOf<(List<String>, Int) -> Unit> { { _, _ -> } }
@@ -98,15 +99,11 @@ private fun Gallery(images: List<GalleryImage>) {
 
 @Composable
 private fun LinkCard(link: LinkMetadata, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.onSurface.copy(alpha = .06f)).clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically) {
-        if (link.thumbnailUrl != null) RemoteImage(link.thumbnailUrl, Modifier.size(84.dp), 1f)
-        else Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Link, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-            Text(link.domain, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, maxLines = 1)
-            Text(link.url, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
-        Icon(Icons.Rounded.OpenInNew, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 12.dp).size(18.dp))
+    Row(Modifier.fillMaxWidth().heightIn(min = 76.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = .07f), RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(Icons.Rounded.Link, null, tint = Seekur.link, modifier = Modifier.size(30.dp))
+        Text(link.domain, style = MaterialTheme.typography.titleMedium, color = Seekur.link, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        if (link.thumbnailUrl != null) RemoteImage(link.thumbnailUrl, Modifier.width(112.dp).clip(RoundedCornerShape(10.dp)), 1.5f)
     }
 }
 

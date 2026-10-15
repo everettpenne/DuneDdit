@@ -45,7 +45,9 @@ class PostsViewModel(private val graph: Graph, val feed: PostFeed) : ViewModel()
     private var job: Job? = null
     private var started = false
 
-    fun start() { if (!started) { started = true; load(reset = true) } }
+    private val localSaved get() = feed == PostFeed.Saved && graph.settings.saveLocally.value
+
+    fun start() { if (!started) { started = true; if (!localSaved) load(reset = true) } }
 
     fun changeSort(next: ListingSort) {
         if (next == sort) return
@@ -115,37 +117,54 @@ fun PostsScreen(feed: PostFeed, nav: Navigator, onBack: (() -> Unit)? = null, on
     LaunchedEffect(nearEnd, vm.posts.size) { if (nearEnd && vm.posts.isNotEmpty()) vm.loadMore() }
     var searchOpen by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf<Sheet?>(null) }
-    val signedIn by LocalContext.current.graph.accounts.activeId.collectAsState()
+    val graph = LocalContext.current.graph
+    val signedIn by graph.accounts.activeId.collectAsState()
+    val hideSwitcher by graph.settings.hideFeedSwitcher.collectAsState()
+    val saveLocally by graph.settings.saveLocally.collectAsState()
+    val localPosts by graph.localSaves.posts.collectAsState()
+    // "Saved" is the phone's own list when saving on this device is on: no account and no network involved.
+    val localList = feed == PostFeed.Saved && saveLocally
     // Home and Saved belong to an account; without one there is nothing to ask Reddit for.
-    val needsAccount = signedIn == null && (feed == PostFeed.Home || feed == PostFeed.Saved)
+    val needsAccount = signedIn == null && (feed == PostFeed.Home || (feed == PostFeed.Saved && !saveLocally))
+    val posts = if (localList) localPosts else vm.posts
 
     GlassScreen(bars = {
         Column(Modifier.align(Alignment.TopCenter)) {
             GlassTopBar(feed.displayName, onBack = onBack) {
-                if (feed.supportsSearch) GlassIconButton(Icons.Rounded.Search, "Search this subreddit", { searchOpen = !searchOpen; if (!searchOpen) vm.clearSearch() })
-                if (feed.canSort) SortMenu(vm.sort, feed.supportsBestSort, vm::changeSort)
-                if (onSwitchFeed != null && !LocalContext.current.graph.settings.hideFeedSwitcher.collectAsState().value) FeedMenu(feed, onSwitchFeed)
-                if (feed is PostFeed.OfSubreddit) GlassIconButton(Icons.Rounded.Info, "About ${feed.displayName}", { sheet = Sheet.Subreddit(feed.subreddit) })
-                if (feed is PostFeed.OfUser) GlassIconButton(Icons.Rounded.Info, "About u/${feed.username}", { sheet = Sheet.User(feed.username) })
+                if (feed.canSort || (onSwitchFeed != null && !hideSwitcher) || feed.supportsSearch || feed is PostFeed.OfSubreddit || feed is PostFeed.OfUser) GlassActionPill {
+                    if (feed.supportsSearch) PillIcon(Icons.Rounded.Search, "Search this subreddit", { searchOpen = !searchOpen; if (!searchOpen) vm.clearSearch() })
+                    if (feed.canSort) MenuPillIcon(vm.sort.icon(), "Sort by ${vm.sort.label}") { close ->
+                        ListingSort.basic.filter { feed.supportsBestSort || it != ListingSort.Best }.forEach { s -> GlassMenuItem(s.label, { close(); vm.changeSort(s) }, icon = s.icon(), selected = s == vm.sort) }
+                        ListingSort.topOptions.forEach { s -> GlassMenuItem("Top · ${s.label}", { close(); vm.changeSort(s) }, icon = s.icon(), selected = s == vm.sort) }
+                    }
+                    if (onSwitchFeed != null && !hideSwitcher) MenuPillIcon(feed.icon(), "Switch feed") { close ->
+                        PostFeed.frontPage.forEach { f -> GlassMenuItem(f.displayName, { close(); onSwitchFeed(f) }, icon = f.icon(), selected = f.id == feed.id) }
+                    }
+                    if (feed is PostFeed.OfSubreddit) PillIcon(Icons.Rounded.Info, "About ${feed.displayName}", { sheet = Sheet.Subreddit(feed.subreddit) })
+                    if (feed is PostFeed.OfUser) PillIcon(Icons.Rounded.Info, "About u/${feed.username}", { sheet = Sheet.User(feed.username) })
+                }
             }
             if (searchOpen) GlassField(vm.query, { vm.query = it }, "Search ${feed.displayName}", Modifier.padding(horizontal = 16.dp), onSubmit = vm::submitSearch)
         }
     }) {
-        PullToRefreshBox(isRefreshing = vm.refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
+        PullToRefreshBox(isRefreshing = vm.refreshing, onRefresh = { if (!localList) vm.refresh() }, modifier = Modifier.fillMaxSize()) {
             LazyColumn(Modifier.fillMaxSize(), state = listState,
                 contentPadding = PaddingValues(top = topContentPadding() + if (searchOpen) 56.dp else 0.dp, bottom = bottomContentPadding(), start = 8.dp, end = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                itemsIndexed(vm.posts, key = { _, p -> p.id }) { _, post -> PostCard(post, nav, compact = true, modifier = Modifier.widthIn(max = 800.dp).fillMaxWidth()) }
+                if (localList) item { Text("Saved on this device", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp)) }
+                itemsIndexed(posts, key = { _, p -> p.id }) { _, post -> PostCard(post, nav, compact = true, modifier = Modifier.widthIn(max = 800.dp).fillMaxWidth()) }
                 item {
                     when {
                         needsAccount -> Unit
+                        localList && posts.isEmpty() -> EmptyState(Icons.Rounded.BookmarkBorder, "Nothing saved yet", "Posts you save with the bookmark stay on this phone.")
+                        localList -> Unit
                         vm.loading && vm.posts.isNotEmpty() -> LoadingRow()
                         vm.failure != null -> ErrorState(vm.failure!!, onRetry = { if (vm.posts.isEmpty()) vm.refresh() else vm.loadMore() })
                         !vm.loading && vm.posts.isEmpty() -> EmptyState(Icons.Rounded.Inbox, "Nothing here", "No posts to show.")
                     }
                 }
             }
-            if (vm.loading && vm.posts.isEmpty() && vm.failure == null && !needsAccount) Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+            if (vm.loading && vm.posts.isEmpty() && vm.failure == null && !needsAccount && !localList) Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
             if (needsAccount) Column(Modifier.fillMaxSize().padding(32.dp), Arrangement.Center, Alignment.CenterHorizontally) {
                 EmptyState(Icons.Rounded.PersonOff, "Sign in to Reddit", "Your Home feed and saved posts need an account. Popular and All work with one too.")
                 Spacer(Modifier.height(12.dp)); GlassButton("Add account", onSignIn, prominent = true)
@@ -164,32 +183,40 @@ private sealed interface Sheet {
     data class User(val username: String) : Sheet
 }
 
+/** A [PillIcon] that opens a glass menu when tapped; [content] builds the rows and is handed a function that closes the menu. */
 @Composable
-private fun SortMenu(current: ListingSort, supportsBest: Boolean, onSort: (ListingSort) -> Unit) {
+fun MenuPillIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, content: @Composable ColumnScope.(close: () -> Unit) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        GlassIconButton(Icons.Rounded.SwapVert, "Sort by ${current.label}", { open = true })
-        GlassDropdownMenu(open, { open = false }) {
-            (ListingSort.basic.filter { supportsBest || it != ListingSort.Best }).forEach { s ->
-                GlassMenuItem(s.label, { open = false; onSort(s) }, selected = s == current)
-            }
-            ListingSort.topOptions.forEach { s -> GlassMenuItem("Top · ${s.label}", { open = false; onSort(s) }, selected = s == current) }
-        }
+        PillIcon(icon, description, { open = true })
+        GlassDropdownMenu(open, { open = false }) { content { open = false } }
     }
 }
 
-@Composable
-private fun FeedMenu(current: PostFeed, onSwitch: (PostFeed) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        GlassIconButton(Icons.Rounded.ExpandCircleDown, "Switch feed", { open = true })
-        GlassDropdownMenu(open, { open = false }) {
-            PostFeed.frontPage.forEach { f ->
-                GlassMenuItem(f.displayName, { open = false; onSwitch(f) }, selected = f.id == current.id,
-                    icon = when (f) { PostFeed.Home -> Icons.Rounded.Home; PostFeed.Popular -> Icons.Rounded.TrendingUp; else -> Icons.Rounded.Public })
-            }
-        }
+fun ListingSort.icon(): androidx.compose.ui.graphics.vector.ImageVector = when (this) {
+    ListingSort.Best -> Icons.Rounded.EmojiEvents
+    ListingSort.Hot -> Icons.Rounded.LocalFireDepartment
+    ListingSort.New -> Icons.Rounded.Newspaper
+    ListingSort.Controversial -> Icons.Rounded.SportsMartialArts
+    is ListingSort.Top -> when (period) {
+        TopPeriod.HOUR -> Icons.Rounded.Schedule; TopPeriod.DAY -> Icons.Rounded.WbSunny; TopPeriod.WEEK -> Icons.Rounded.DateRange
+        TopPeriod.MONTH -> Icons.Rounded.CalendarMonth; TopPeriod.YEAR -> Icons.Rounded.Public; TopPeriod.ALL -> Icons.Rounded.AllInclusive
     }
+}
+
+fun PostFeed.icon(): androidx.compose.ui.graphics.vector.ImageVector = when (this) {
+    PostFeed.Home -> Icons.Rounded.Home
+    PostFeed.Popular -> Icons.Rounded.TrendingUp
+    PostFeed.All -> Icons.Rounded.Public
+    is PostFeed.OfSubreddit -> Icons.Rounded.Forum
+    PostFeed.Saved -> Icons.Rounded.Bookmark
+    is PostFeed.OfUser -> Icons.Rounded.Person
+}
+
+fun CommentSort.icon(): androidx.compose.ui.graphics.vector.ImageVector = when (this) {
+    CommentSort.CONFIDENCE -> Icons.Rounded.LocalFireDepartment; CommentSort.TOP -> Icons.Rounded.EmojiEvents; CommentSort.NEW -> Icons.Rounded.Newspaper
+    CommentSort.CONTROVERSIAL -> Icons.Rounded.SportsMartialArts; CommentSort.OLD -> Icons.Rounded.History; CommentSort.RANDOM -> Icons.Rounded.Casino
+    CommentSort.QA -> Icons.Rounded.QuestionAnswer; CommentSort.LIVE -> Icons.Rounded.Sensors
 }
 
 @Composable

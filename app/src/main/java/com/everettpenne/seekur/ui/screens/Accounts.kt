@@ -41,7 +41,7 @@ fun AccountsScreen(onBack: () -> Unit, onAdd: () -> Unit) {
     val list by accounts.accounts.collectAsState()
     val active by accounts.activeId.collectAsState()
     var confirmDelete by remember { mutableStateOf<String?>(null) }
-    GlassScreen(bars = { GlassTopBar("Accounts", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
+    GlassScreen(bars = { GlassCenteredTopBar("Accounts", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = topContentPadding(), bottom = bottomContentPadding(), start = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (list.isEmpty()) EmptyState(Icons.Rounded.PersonOff, "No accounts", "Sign in to Reddit to see your feed, vote and comment.")
@@ -115,7 +115,7 @@ fun LoginScreen(onDone: () -> Unit, onCancel: () -> Unit) {
         }
     }
     GlassScreen(bars = {
-        GlassTopBar("Sign in", subtitle = status ?: "Use Reddit's own page", onBack = onCancel, modifier = Modifier.align(Alignment.TopCenter))
+        GlassCenteredTopBar("Sign in", subtitle = status ?: "Use Reddit's own page", onBack = onCancel, modifier = Modifier.align(Alignment.TopCenter))
     }) {
         Box(Modifier.fillMaxSize().padding(top = topContentPadding())) {
             AndroidView(modifier = Modifier.fillMaxSize(), factory = { c ->

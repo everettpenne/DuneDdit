@@ -3,6 +3,12 @@ package com.everettpenne.seekur.ui.screens
 import com.everettpenne.seekur.ui.glass.GlassScreen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.rounded.Close
+import com.everettpenne.seekur.ui.glass.GlassIconButton
+import com.everettpenne.seekur.ui.glass.glassSurface
+import com.everettpenne.seekur.ui.theme.Seekur
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -60,30 +66,38 @@ class SearchViewModel(private val graph: Graph) : ViewModel() {
     fun clear() { query = ""; subreddits = emptyList(); posts = emptyList(); failure = null }
 }
 
-/** Search subreddits or posts across Reddit. */
+/** Search subreddits or posts across Reddit. The field sits at the bottom, above the keyboard or the tab bar, as in the original. */
 @Composable
 fun SearchScreen(nav: Navigator) {
     val graph = LocalContext.current.graph
     val vm: SearchViewModel = viewModel { SearchViewModel(graph) }
+    val imeVisible = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
     GlassScreen(bars = {
-        Column(Modifier.align(Alignment.TopCenter)) {
-            GlassTopBar("Search")
-            GlassField(vm.query, { vm.query = it; if (it.isEmpty()) vm.clear() }, "Search ${vm.scope.label.lowercase()}", Modifier.padding(horizontal = 16.dp), onSubmit = vm::submit)
-            Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        GlassTopBar("Search", modifier = Modifier.align(Alignment.TopCenter)) {
+            if (vm.query.isNotEmpty() || vm.subreddits.isNotEmpty() || vm.posts.isNotEmpty()) Box(Modifier.height(48.dp).glassSurface(RoundedCornerShape(percent = 50), blurRadius = 6f, lensHeight = 12f, lensAmount = 24f, shadowed = false)
+                .clickable(interactionSource = null, indication = null) { vm.clear() }.padding(horizontal = 18.dp), Alignment.Center) { Text("Clear", color = Seekur.accent, style = MaterialTheme.typography.bodyLarge) }
+        }
+        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = if (imeVisible) 8.dp else 92.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SearchScope.entries.forEach { s -> GlassChip(vm.scope == s, { vm.changeScope(s) }) { Text(s.label) } }
+            }
+            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                GlassField(vm.query, { vm.query = it; if (it.isEmpty()) vm.clear() }, "Search ${vm.scope.label}", Modifier.weight(1f), onSubmit = vm::submit)
+                GlassIconButton(Icons.Rounded.Close, "Clear search", { vm.clear() }, size = 48)
             }
         }
     }) {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = topContentPadding() + 108.dp, bottom = bottomContentPadding(), start = 8.dp, end = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = topContentPadding(), bottom = 220.dp, start = 8.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (vm.loading) item { LoadingRow() }
             vm.failure?.let { f -> item { ErrorState(f, onRetry = vm::submit) } }
             when (vm.scope) {
                 SearchScope.SUBREDDITS -> items(vm.subreddits, key = { it.id }) { sub ->
-                    Row(Modifier.fillMaxWidth().clickable { nav.openSubreddit(sub) }.padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        SubredditIcon(sub, 36)
+                    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(24.dp)).clickable { nav.openSubreddit(sub) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        SubredditIcon(sub, 44)
                         Column { Text(sub.displayNamePrefixed, style = MaterialTheme.typography.bodyLarge)
-                            if (sub.subscriberCount > 0) Text("${sub.formattedSubscribers} subscribers", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            if (sub.subscriberCount > 0) Text("${sub.formattedSubscribers} subscribers", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                 }
                 SearchScope.POSTS -> items(vm.posts, key = { it.id }) { PostCard(it, nav, compact = true, modifier = Modifier.widthIn(max = 800.dp).fillMaxWidth()) }

@@ -54,12 +54,17 @@ fun PostCard(post: Post, nav: Navigator, compact: Boolean, modifier: Modifier = 
     val api = context.graph.api
     val scope = rememberCoroutineScope()
     val blurNsfw by context.graph.settings.blurNsfw.collectAsState()
-    var saved by remember(post.id) { mutableStateOf(post.saved) }
+    val saveLocally by context.graph.settings.saveLocally.collectAsState()
+    val localSaved by context.graph.localSaves.posts.collectAsState()
+    var redditSaved by remember(post.id) { mutableStateOf(post.saved) }
+    // With "save on this device" on, the bookmark means the local list and the Reddit account is never touched.
+    val saved = if (saveLocally) localSaved.any { it.id == post.id } else redditSaved
     var menu by remember { mutableStateOf(false) }
     var revealed by remember(post.id) { mutableStateOf(false) }
 
-    fun toggleSave() = scope.launch {
-        if (api.save(!saved, post.fullname) is ApiResult.Ok) saved = !saved
+    fun toggleSave() {
+        if (saveLocally) context.graph.localSaves.toggle(post)
+        else scope.launch { if (api.save(!redditSaved, post.fullname) is ApiResult.Ok) redditSaved = !redditSaved }
     }
 
     Box(modifier) {
@@ -88,9 +93,9 @@ fun PostCard(post: Post, nav: Navigator, compact: Boolean, modifier: Modifier = 
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = .6f)))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SubredditIcon(post.subreddit, 32) { nav.openSubreddit(post.subreddit) }
+                SubredditIcon(post.subreddit, 44) { nav.openSubreddit(post.subreddit) }
                 Column(Modifier.weight(1f)) {
-                    Text(post.subreddit.displayNamePrefixed, style = MaterialTheme.typography.labelMedium, color = post.subreddit.keyColor?.let { Color(it) } ?: MaterialTheme.colorScheme.primary,
+                    Text(post.subreddit.displayNamePrefixed, style = MaterialTheme.typography.labelMedium, color = post.subreddit.keyColor?.let { Color(it) } ?: Seekur.accent,
                         maxLines = 1, modifier = Modifier.clickable { nav.openSubreddit(post.subreddit) })
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Stat(Icons.Rounded.ChatBubbleOutline, post.numComments.compact())
@@ -105,7 +110,7 @@ fun PostCard(post: Post, nav: Navigator, compact: Boolean, modifier: Modifier = 
         }
         GlassDropdownMenu(menu, { menu = false }) {
             GlassMenuItem("u/${post.author}", { menu = false; nav.openUser(post.author) }, icon = Icons.Rounded.Person)
-            GlassMenuItem(if (saved) "Unsave" else "Save", { menu = false; toggleSave() }, icon = if (saved) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder)
+            GlassMenuItem(if (saved) "Unsave" else if (saveLocally) "Save on this device" else "Save", { menu = false; toggleSave() }, icon = if (saved) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder)
             GlassMenuItem("Share", {
                 menu = false
                 context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, post.redditUrl), null))
@@ -130,7 +135,7 @@ private fun CircleButton(icon: androidx.compose.ui.graphics.vector.ImageVector, 
 
 @Composable
 fun SubredditIcon(subreddit: Subreddit, size: Int, onClick: (() -> Unit)? = null) {
-    val tint = subreddit.keyColor?.let { Color(it) } ?: MaterialTheme.colorScheme.primary
+    val tint = subreddit.keyColor?.let { Color(it) } ?: Seekur.accent
     Box(Modifier.size(size.dp).clip(CircleShape).background(tint.copy(alpha = .15f)).then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center) {
         if (subreddit.iconUrl != null) coil3.compose.AsyncImage(subreddit.iconUrl, null, Modifier.fillMaxSize())

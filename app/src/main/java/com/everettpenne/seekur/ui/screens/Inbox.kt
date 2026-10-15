@@ -28,7 +28,7 @@ import com.everettpenne.seekur.data.model.Message
 import com.everettpenne.seekur.data.model.PostNavigation
 import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.glass.GlassScreen
-import com.everettpenne.seekur.ui.glass.GlassTopBar
+import com.everettpenne.seekur.ui.glass.GlassCenteredTopBar
 import com.everettpenne.seekur.util.timeAgo
 import kotlinx.coroutines.launch
 
@@ -62,7 +62,7 @@ fun InboxScreen(onBack: () -> Unit, onOpenPost: (PostNavigation) -> Unit) {
     val graph = LocalContext.current.graph
     val vm: InboxViewModel = viewModel { InboxViewModel(graph) }
     LaunchedEffect(vm) { vm.start() }
-    GlassScreen(bars = { GlassTopBar("Inbox", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
+    GlassScreen(bars = { GlassCenteredTopBar("Inbox", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
         PullToRefreshBox(isRefreshing = false, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = topContentPadding(), bottom = bottomContentPadding(), start = 12.dp, end = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -21,7 +21,7 @@ class AppLaunchTest {
         compose.onNodeWithContentDescription("Profile").performClick(); settle()
         compose.onNodeWithText("No account connected").assertExists()
         compose.onNodeWithContentDescription("Search").performClick(); settle()
-        compose.onNodeWithText("Search subreddits").assertExists()
+        compose.onNodeWithText("Search Subreddits").assertExists()
         compose.onNodeWithContentDescription("Feed").performClick(); settle()
         compose.onNodeWithText("Sign in to Reddit").assertExists()
     }
@@ -30,8 +30,11 @@ class AppLaunchTest {
         settle()
         compose.onNodeWithContentDescription("Profile").performClick(); settle()
         compose.onNodeWithContentDescription("Settings").performClick(); settle()
-        compose.onNodeWithText("Autoplay videos").assertExists()
-        compose.onAllNodesWithContentDescription("On")[0].performClick(); settle()
+        compose.onNodeWithText("Autoplay Videos").assertExists()
+        // The "save on this device" switch flips and its explanation is shown.
+        compose.onNodeWithText("Save on this device").assertExists()
+        compose.onAllNodesWithContentDescription("Off")[0].performClick(); settle()
+        compose.onNodeWithText("Save on this device").assertExists()
         compose.onNodeWithText("Accounts").performClick(); settle()
         compose.onNodeWithText("No accounts").assertExists()
     }

@@ -66,3 +66,17 @@ class MediaExtractorTest {
         assertEquals("x", p.id); assertEquals("t3_x", p.fullname); assertEquals(MediaType.None, p.media)
     }
 }
+
+class SavedCodecTest {
+    private fun post(json: String) = Posts.from(RedditJson.decodeFromString<Thing<PostDto>>(json).data)
+
+    @Test fun savedPostsSurviveAWriteAndReadWithEveryKindOfMedia() {
+        val posts = listOf(Fixtures.imagePost, Fixtures.selfPost, Fixtures.galleryPost, Fixtures.videoPost, Fixtures.youtubePost, Fixtures.linkPost, Fixtures.crosspost).map(::post)
+        assertEquals(posts, com.everettpenne.seekur.data.SavedCodec.decode(com.everettpenne.seekur.data.SavedCodec.encode(posts)))
+    }
+
+    @Test fun unreadableStorageIsAnEmptyList() {
+        assertEquals(emptyList<Post>(), com.everettpenne.seekur.data.SavedCodec.decode("garbage"))
+        assertEquals(emptyList<Post>(), com.everettpenne.seekur.data.SavedCodec.decode(null))
+    }
+}
