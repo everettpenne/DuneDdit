@@ -22,7 +22,8 @@ object Comments {
             if (thing.kind != "t1") continue
             visit(RedditJson.decodeFromJsonElement<CommentDto>(thing.data), result)
         }
-        return result
+        // A keyed list crashes on a repeated id, so a comment Reddit lists twice is kept once.
+        return result.distinctBy { it.id }
     }
 
     private fun repliesOf(dto: CommentDto): List<CommentDto> {

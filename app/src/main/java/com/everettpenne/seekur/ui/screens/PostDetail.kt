@@ -125,30 +125,45 @@ fun PostDetailScreen(target: PostNavigation, nav: Navigator, onBack: () -> Unit)
         }
     }) {
         PullToRefreshBox(isRefreshing = false, onRefresh = { vm.load(resetPost = true) }, modifier = Modifier.fillMaxSize()) {
-            LazyColumn(Modifier.fillMaxSize(), state = listState,
-                contentPadding = PaddingValues(top = topContentPadding(), bottom = bottomContentPadding(), start = 16.dp, end = 16.dp)) {
-                item(key = "post") {
-                    vm.post?.let { PostCard(it, nav, compact = false, modifier = Modifier.widthIn(max = 800.dp).fillMaxWidth(), onReply = { replyTo = it.fullname }) }
-                }
-                item(key = "header") {
-                    when {
-                        vm.loading && comments.isEmpty() -> LoadingRow()
-                        vm.failure != null && comments.isEmpty() -> ErrorState(vm.failure!!, onRetry = { vm.load(resetPost = true) })
-                        comments.isNotEmpty() -> Text("Comments", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))
-                        !vm.loading -> EmptyState(Icons.Rounded.ChatBubbleOutline, "No comments yet", "Be the first to reply.")
-                    }
-                }
-                items(comments, key = { it.id }) { c ->
-                    if (c.depth == 0 && c.id != comments.first().id) Box(Modifier.fillMaxWidth().padding(horizontal = (-16).dp).height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant))
-                    else if (c.id != comments.first().id) Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f)))
-                    CommentRow(c, collapsed = c.id in vm.collapsed, onToggle = { vm.toggleCollapse(c.id) }, nav = nav, onReply = { replyTo = c.fullname },
-                        modifier = Modifier.widthIn(max = 800.dp).animateContentSize())
-                }
-            }
+            PostDetailList(vm.post, comments, vm.collapsed, vm.loading, vm.failure, nav, listState,
+                onToggle = vm::toggleCollapse, onReply = { replyTo = it }, onRetry = { vm.load(resetPost = true) })
         }
     }
     replyTo?.let { parent ->
         ReplySheet(isTopLevel = parent.startsWith("t3_"), onDismiss = { replyTo = null }, onSubmit = { text -> vm.reply(text, parent); replyTo = null })
+    }
+}
+
+/**
+ * The post and its comments as a list. Stateless, so it is rendered with sample data in tests: a bug in this layout (a padding that went
+ * negative) only appeared once real comments were on screen. Items carry their own side margins so that the thick bar between top-level
+ * comments can run the full width; padding cannot be negative, so the list itself has none.
+ */
+@Composable
+fun PostDetailList(post: Post?, comments: List<Comment>, collapsed: Set<String>, loading: Boolean, failure: Failure?, nav: Navigator,
+                   listState: androidx.compose.foundation.lazy.LazyListState, onToggle: (String) -> Unit, onReply: (String) -> Unit, onRetry: () -> Unit) {
+    val side = Modifier.padding(horizontal = 16.dp)
+    LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(top = topContentPadding(), bottom = bottomContentPadding())) {
+        item(key = "post") {
+            post?.let { PostCard(it, nav, compact = false, modifier = side.widthIn(max = 800.dp).fillMaxWidth(), onReply = { onReply(it.fullname) }) }
+        }
+        item(key = "header") {
+            Box(side) {
+                when {
+                    loading && comments.isEmpty() -> LoadingRow()
+                    failure != null && comments.isEmpty() -> ErrorState(failure, onRetry = onRetry)
+                    comments.isNotEmpty() -> Text("Comments", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 18.dp, bottom = 8.dp))
+                    !loading -> EmptyState(Icons.Rounded.ChatBubbleOutline, "No comments yet", "Be the first to reply.")
+                }
+            }
+        }
+        items(comments, key = { it.id }) { c ->
+            val first = c.id == comments.first().id
+            if (c.depth == 0 && !first) Box(Modifier.fillMaxWidth().height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant))
+            else if (!first) Box(side.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f)))
+            CommentRow(c, collapsed = c.id in collapsed, onToggle = { onToggle(c.id) }, nav = nav, onReply = { onReply(c.fullname) },
+                modifier = side.widthIn(max = 800.dp).animateContentSize())
+        }
     }
 }
 

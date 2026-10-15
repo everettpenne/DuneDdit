@@ -44,7 +44,7 @@ class ProfileViewModel(private val graph: Graph) : ViewModel() {
         loading = true; failure = null; loadedFor = account
         viewModelScope.launch {
             when (val r = graph.api.fetchUserSubreddits()) {
-                is ApiResult.Ok -> subreddits = r.value.filter { it.isSubscribed }
+                is ApiResult.Ok -> subreddits = r.value.filter { it.isSubscribed }.distinctBy { it.id + "/" + it.displayName.lowercase() }
                 is ApiResult.Failed -> failure = r.reason
             }
             loading = false
@@ -83,7 +83,7 @@ fun ProfileScreen(nav: Navigator, onInbox: () -> Unit, onSaved: () -> Unit, onSe
             }
             val favorites = filtered.filter { it.displayName.lowercase() in favoriteNames }.sortedBy { it.displayName.lowercase() }
             if (favorites.isNotEmpty()) { add(ProfileRow.Header("★")); favorites.forEach { add(ProfileRow.Sub(it)) } }
-            filtered.filter { it.displayName.lowercase() !in favoriteNames }.groupBy { it.displayName.first().uppercaseChar().toString() }.toSortedMap()
+            filtered.filter { it.displayName.lowercase() !in favoriteNames }.groupBy { it.displayName.firstOrNull()?.uppercaseChar()?.toString() ?: "#" }.toSortedMap()
                 .forEach { (letter, subs) -> add(ProfileRow.Header(letter)); subs.sortedBy { it.displayName.lowercase() }.forEach { add(ProfileRow.Sub(it)) } }
         }
     }
@@ -107,7 +107,7 @@ fun ProfileScreen(nav: Navigator, onInbox: () -> Unit, onSaved: () -> Unit, onSe
         PullToRefreshBox(isRefreshing = false, onRefresh = { vm.load(force = true) }, modifier = Modifier.fillMaxSize()) {
             LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(top = topContentPadding() + 56.dp, bottom = bottomContentPadding(), start = 16.dp, end = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(rows, key = { r -> when (r) { is ProfileRow.Header -> "h_${r.text}"; is ProfileRow.Sub -> r.subreddit.id; else -> r::class.simpleName.orEmpty() } }) { r ->
+                items(rows, key = { r -> when (r) { is ProfileRow.Header -> "h_${r.text}"; is ProfileRow.Sub -> "s_${r.subreddit.id}_${r.subreddit.displayName}"; else -> r::class.simpleName.orEmpty() } }) { r ->
                     when (r) {
                         ProfileRow.Links -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             LinkTile(Icons.Rounded.Inbox, "Inbox", Seekur.accent, onInbox, Modifier.weight(1f))

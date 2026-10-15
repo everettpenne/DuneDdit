@@ -25,15 +25,19 @@ object Markdown {
         """`([^`\n]+)`""" +                                   // 1 code
         """|\[([^\]\n]+)]\(([^)\s]+)\)""" +                   // 2,3 link
         """|(https?://[^\s<>()\[\]]+)""" +                     // 4 bare link
-        """|\*\*(.+?)\*\*(?!\*)|__(.+?)__(?!_)""" +                       // 5,6 bold
-        """|~~(.+?)~~""" +                                     // 7 strike
-        """|\*(?![\s*])(.+?)(?<![\s*])\*""" +                  // 8 italic
-        """|(?<![A-Za-z0-9])_(?![\s_])(.+?)(?<![\s_])_(?![A-Za-z0-9])""",   // 9 italic
+        """|\*\*([^\n]+?)\*\*(?!\*)|__([^\n]+?)__(?!_)""" +                       // 5,6 bold
+        """|~~([^\n]+?)~~""" +                                     // 7 strike
+        """|\*(?![\s*])([^\n]+?)(?<![\s*])\*""" +                  // 8 italic
+        """|(?<![A-Za-z0-9])_(?![\s_])([^\n]+?)(?<![\s_])_(?![A-Za-z0-9])""",   // 9 italic
         RegexOption.DOT_MATCHES_ALL)
 
     fun inline(text: String): List<Span> = parseInline(text, Span(""))
 
+    /** Beyond this much text in one go, marks are left as typed: a pathological comment must not be able to stall the screen. */
+    private const val MAX_INLINE = 20_000
+
     private fun parseInline(text: String, base: Span): List<Span> {
+        if (text.length > MAX_INLINE) return listOf(base.copy(text = text))
         val out = ArrayList<Span>()
         fun plain(s: String) { if (s.isNotEmpty()) out += base.copy(text = s) }
         var last = 0

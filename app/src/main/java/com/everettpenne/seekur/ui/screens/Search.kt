@@ -56,8 +56,8 @@ class SearchViewModel(private val graph: Graph) : ViewModel() {
         loading = true; failure = null
         job = viewModelScope.launch {
             when (scope) {
-                SearchScope.SUBREDDITS -> when (val r = graph.api.searchSubreddits(query.trim(), 25)) { is ApiResult.Ok -> subreddits = r.value; is ApiResult.Failed -> failure = r.reason }
-                SearchScope.POSTS -> when (val r = graph.api.searchPosts(query.trim(), limit = 25)) { is ApiResult.Ok -> posts = r.value; is ApiResult.Failed -> failure = r.reason }
+                SearchScope.SUBREDDITS -> when (val r = graph.api.searchSubreddits(query.trim(), 25)) { is ApiResult.Ok -> subreddits = r.value.distinctBy { it.id }; is ApiResult.Failed -> failure = r.reason }
+                SearchScope.POSTS -> when (val r = graph.api.searchPosts(query.trim(), limit = 25)) { is ApiResult.Ok -> posts = r.value.distinctBy { it.id }; is ApiResult.Failed -> failure = r.reason }
             }
             loading = false
         }

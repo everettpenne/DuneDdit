@@ -60,3 +60,27 @@ class FormatAndMarkdownTest {
         assertEquals(PostFeed.Popular, PostFeed.frontPage("popular")); assertNull(PostFeed.frontPage("saved"))
     }
 }
+
+class RobustnessTest {
+    @Test fun hostileMarkdownIsParsedQuickly() {
+        val inputs = listOf("*a ".repeat(30_000), "_x ".repeat(30_000), "**" + "y".repeat(50_000), "[".repeat(20_000) + "](", "`".repeat(40_000), "~~ ".repeat(30_000), "a*\n".repeat(30_000))
+        for (input in inputs) {
+            val start = System.nanoTime()
+            Markdown.blocks(input)
+            val ms = (System.nanoTime() - start) / 1_000_000
+            assertTrue("took ${ms}ms on ${input.take(12)}", ms < 3_000)
+        }
+    }
+
+    @Test fun emphasisStaysOnItsLine() {
+        val spans = Markdown.inline("*not\nclosed*")
+        assertEquals("*not\nclosed*", spans.joinToString("") { it.text })
+        assertTrue(spans.none { it.italic })
+    }
+
+    @Test fun repeatedCommentIdsAreKeptOnce() {
+        val dup = """{"kind":"t1","data":{"id":"x","author":"a","body":"hi","depth":0,"replies":""}}"""
+        val listing = RedditJson.decodeFromString<Listing<kotlinx.serialization.json.JsonObject>>(Fixtures.listing(dup, dup, dup))
+        assertEquals(listOf("x"), com.everettpenne.seekur.data.media.Comments.flatten(listing).map { it.id })
+    }
+}

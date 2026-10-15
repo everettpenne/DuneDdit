@@ -64,7 +64,7 @@ class PostsViewModel(private val graph: Graph, val feed: PostFeed) : ViewModel()
         job?.cancel(); searching = true; loading = true; failure = null
         job = viewModelScope.launch {
             when (val r = graph.api.searchPosts(q, subreddit = feed.subredditName())) {
-                is ApiResult.Ok -> { posts = r.value; after = null }
+                is ApiResult.Ok -> { posts = r.value.distinctBy { it.id }; after = null }
                 is ApiResult.Failed -> failure = r.reason
             }
             loading = false
@@ -83,7 +83,7 @@ class PostsViewModel(private val graph: Graph, val feed: PostFeed) : ViewModel()
             when (val r = graph.api.fetchPosts(feed, sort, cursor, username = username)) {
                 is ApiResult.Ok -> {
                     val seen = if (reset) emptySet() else posts.mapTo(HashSet()) { it.id }
-                    posts = (if (reset) emptyList() else posts) + r.value.posts.filter { it.id !in seen }
+                    posts = ((if (reset) emptyList() else posts) + r.value.posts.filter { it.id !in seen }).distinctBy { it.id }
                     after = r.value.after
                 }
                 is ApiResult.Failed -> failure = r.reason

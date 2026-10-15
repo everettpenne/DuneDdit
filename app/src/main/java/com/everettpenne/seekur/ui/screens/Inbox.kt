@@ -48,7 +48,7 @@ class InboxViewModel(private val graph: Graph) : ViewModel() {
         loading = true; failure = null
         viewModelScope.launch {
             when (val r = graph.api.fetchInbox(after = if (reset) null else after)) {
-                is ApiResult.Ok -> { messages = (if (reset) emptyList() else messages) + r.value.first; after = r.value.second }
+                is ApiResult.Ok -> { messages = ((if (reset) emptyList() else messages) + r.value.first).distinctBy { it.id }; after = r.value.second }
                 is ApiResult.Failed -> failure = r.reason
             }
             loading = false
