@@ -1,0 +1,102 @@
+package com.everettpenne.seekur.ui.screens
+
+import androidx.compose.material.icons.automirrored.rounded.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import coil3.SingletonImageLoader
+import com.everettpenne.seekur.BuildConfig
+import com.everettpenne.seekur.graph
+import com.everettpenne.seekur.ui.glass.*
+import com.everettpenne.seekur.ui.theme.Seekur
+
+@Composable
+fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit) {
+    val context = LocalContext.current
+    val settings = context.graph.settings
+    val accounts by context.graph.accounts.accounts.collectAsState()
+    val activeId by context.graph.accounts.activeId.collectAsState()
+    val persistFeed by settings.persistFeed.collectAsState()
+    val persistSort by settings.persistSort.collectAsState()
+    val hideSwitcher by settings.hideFeedSwitcher.collectAsState()
+    val autoplay by settings.autoplay.collectAsState()
+    val mute by settings.muteOnPlay.collectAsState()
+    val blur by settings.blurNsfw.collectAsState()
+    var cacheCleared by remember { mutableStateOf(false) }
+
+    GlassScreen(bars = { GlassTopBar("Settings", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = topContentPadding(), bottom = bottomContentPadding(), start = 16.dp, end = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Group("Reddit login") {
+                NavRow(Icons.Rounded.Person, "Accounts", accounts.firstOrNull { it.id == activeId }?.userName?.let { "u/$it" } ?: "Not signed in", onAccounts)
+            }
+            Group("Feeds") {
+                SwitchRow(Icons.Rounded.Layers, "Remember selected feed", persistFeed, settings::setPersistFeed)
+                SwitchRow(Icons.Rounded.SwapVert, "Remember sort order", persistSort, settings::setPersistSort)
+                SwitchRow(Icons.Rounded.ExpandCircleDown, "Hide feed switcher", hideSwitcher, settings::setHideFeedSwitcher)
+                SwitchRow(Icons.Rounded.VisibilityOff, "Blur NSFW media", blur, settings::setBlurNsfw)
+            }
+            Group("Playback") {
+                SwitchRow(Icons.Rounded.PlayArrow, "Autoplay videos", autoplay, settings::setAutoplay)
+                SwitchRow(Icons.AutoMirrored.Rounded.VolumeOff, "Mute on play", mute, settings::setMuteOnPlay)
+            }
+            Group("Storage") {
+                NavRow(Icons.Rounded.DeleteSweep, "Clear image cache", if (cacheCleared) "Cleared" else "Free up space") {
+                    val loader = SingletonImageLoader.get(context)
+                    loader.memoryCache?.clear(); loader.diskCache?.clear(); cacheCleared = true
+                }
+            }
+            Group("About") {
+                NavRow(Icons.Rounded.Info, "Seekur ${BuildConfig.VERSION_NAME}", "An Android port of Lurker, with iOS-style liquid glass") {}
+                NavRow(Icons.Rounded.Code, "Open source", "MIT licensed. Based on SwiftDdit (Lurker) by Zabir Raihan") {
+                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/SilverMarcs/SwiftDdit")))
+                }
+            }
+            Text("Seekur uses Reddit's website, signed in with your own session, not Reddit's official API. It can stop working if Reddit changes or blocks that.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 8.dp))
+        }
+    }
+}
+
+@Composable
+private fun Group(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(title.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
+        Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)), content = content)
+    }
+}
+
+@Composable
+private fun RowShell(icon: ImageVector, title: String, subtitle: String?, onClick: (() -> Unit)?, trailing: @Composable () -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Icon(icon, null, tint = Seekur.accent, modifier = Modifier.size(24.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        trailing()
+    }
+}
+
+@Composable
+private fun NavRow(icon: ImageVector, title: String, subtitle: String?, onClick: () -> Unit) =
+    RowShell(icon, title, subtitle, onClick) { Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+
+@Composable
+private fun SwitchRow(icon: ImageVector, title: String, checked: Boolean, onChange: (Boolean) -> Unit) =
+    RowShell(icon, title, null, { onChange(!checked) }) { LiquidSwitch(checked, onChange) }

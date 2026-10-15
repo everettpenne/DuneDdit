@@ -1,0 +1,49 @@
+package com.everettpenne.seekur.ui.theme
+
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+/** The iOS-style palette: system blue accent, grouped backgrounds, and "secondary" fills for cards. */
+object Seekur {
+    val accent = Color(0xFF0A84FF)
+    val green = Color(0xFF34C759)
+    val indigo = Color(0xFF5E5CE6)
+    val red = Color(0xFFFF453A)
+    val yellow = Color(0xFFFFD60A)
+    val orange = Color(0xFFFF9F0A)
+}
+
+private val Light = lightColorScheme(
+    primary = Seekur.accent, background = Color(0xFFF2F2F7), surface = Color(0xFFF2F2F7), onBackground = Color(0xFF1C1C1E), onSurface = Color(0xFF1C1C1E),
+    surfaceVariant = Color.White, onSurfaceVariant = Color(0xFF6C6C70), outlineVariant = Color(0xFFD1D1D6), error = Seekur.red)
+private val Dark = darkColorScheme(
+    primary = Seekur.accent, background = Color(0xFF000000), surface = Color(0xFF000000), onBackground = Color(0xFFF2F2F7), onSurface = Color(0xFFF2F2F7),
+    surfaceVariant = Color(0xFF1C1C1E), onSurfaceVariant = Color(0xFF98989D), outlineVariant = Color(0xFF38383A), error = Seekur.red)
+
+private val Type = Typography(
+    headlineMedium = TextStyle(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold),
+    titleLarge = TextStyle(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold),
+    titleMedium = TextStyle(fontSize = 19.sp, lineHeight = 25.sp, fontWeight = FontWeight.SemiBold),
+    bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 22.sp),
+    bodyMedium = TextStyle(fontSize = 15.sp, lineHeight = 21.sp),
+    bodySmall = TextStyle(fontSize = 13.sp, lineHeight = 18.sp),
+    labelMedium = TextStyle(fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
+    labelSmall = TextStyle(fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.SemiBold),
+)
+
+@Composable
+fun SeekurTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) Dark else Light, typography = Type,
+        shapes = Shapes(small = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+            large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)), content = content)
+}
