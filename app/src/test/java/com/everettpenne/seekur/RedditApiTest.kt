@@ -132,3 +132,30 @@ class RedditApiTest {
         assertEquals(emptyList<Account>(), AccountsManager.decode("not json")); assertEquals(emptyList<Account>(), AccountsManager.decode(null))
     }
 }
+
+/** Closing a response or cancelling a call writes to the socket; Android kills an app that does that on its main thread. */
+class RedditApiThreadingTest {
+    private val callThread: Thread get() = Thread.currentThread()
+
+    @Test fun connectionsAreReleasedOffTheCallingThreadEvenForErrorResponses() = runBlocking {
+        val server = MockWebServer().apply { start() }
+        try {
+            val ended = java.util.concurrent.CopyOnWriteArrayList<Thread>()
+            val listener = object : okhttp3.EventListener() {
+                override fun callEnd(call: okhttp3.Call) { ended += Thread.currentThread() }
+                override fun callFailed(call: okhttp3.Call, ioe: java.io.IOException) { ended += Thread.currentThread() }
+                override fun responseBodyEnd(call: okhttp3.Call, byteCount: Long) { ended += Thread.currentThread() }
+            }
+            val api = RedditApi(OkHttpClient.Builder().eventListener(listener).build(), cookie = { "c" }, userAgent = { "t" },
+                baseUrl = server.url("/").toString().trimEnd('/'))
+            val caller = callThread
+            server.enqueue(MockResponse().setResponseCode(403).setBody("blocked page that is never read".repeat(500)))
+            server.enqueue(MockResponse().setResponseCode(200).setBody(Fixtures.listing(Fixtures.imagePost)))
+            server.enqueue(MockResponse().setResponseCode(500).setBody("x".repeat(5000)))
+            api.fetchPosts(PostFeed.All, ListingSort.Hot); api.fetchPosts(PostFeed.All, ListingSort.Hot)
+            api.modhash = "h"; api.vote(RedditApi.Vote.UP, "t3_x")
+            assertTrue("every call finished somewhere", ended.isNotEmpty())
+            assertTrue("calls finished on the calling thread: ${ended.map { it.name }}", ended.none { it === caller })
+        } finally { server.shutdown() }
+    }
+}

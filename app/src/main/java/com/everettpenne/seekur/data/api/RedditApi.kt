@@ -3,9 +3,11 @@ package com.everettpenne.seekur.data.api
 import com.everettpenne.seekur.data.media.Comments
 import com.everettpenne.seekur.data.media.Posts
 import com.everettpenne.seekur.data.model.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -45,15 +47,27 @@ class RedditApi(
         return builder.build()
     }
 
-    private suspend fun execute(request: Request): Result<Response> = withContext(Dispatchers.IO) {
-        suspendCancellableCoroutine { cont ->
-            val call = client.newCall(request)
-            cont.invokeOnCancellation { call.cancel() }
-            call.enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) { if (cont.isActive) cont.resume(Result.failure(e)) }
-                override fun onResponse(call: Call, response: Response) { cont.resume(Result.success(response)) }
-            })
-        }
+    /** What a request came back with, read and released entirely on OkHttp's own thread. */
+    private class Raw(val code: Int, val body: String) { val ok: Boolean get() = code in 200..299 }
+
+    /** Cancelling a call closes its socket, and closing a TLS socket writes to the network, which Android forbids on the main thread. */
+    private val cancelScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /**
+     * Sends [request] and reads the answer. Everything that touches the connection (reading the body, closing the response, cancelling the call)
+     * happens off the calling thread: closing a response writes to the socket, and doing that on the main thread, where these suspend functions
+     * are called from, killed the app with NetworkOnMainThreadException the first time an error response came back.
+     */
+    private suspend fun send(request: Request): Result<Raw> = suspendCancellableCoroutine { cont ->
+        val call = client.newCall(request)
+        cont.invokeOnCancellation { cancelScope.launch { call.cancel() } }
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) { if (cont.isActive) cont.resume(Result.failure(e)) }
+            override fun onResponse(call: Call, response: Response) {
+                val raw = runCatching { response.use { Raw(it.code, if (it.isSuccessful) it.body?.string().orEmpty() else "") } }
+                if (cont.isActive) cont.resume(raw)
+            }
+        })
     }
 
     private fun failureFor(code: Int): Failure = when (code) {
@@ -65,11 +79,8 @@ class RedditApi(
     }
 
     private suspend fun getText(url: okhttp3.HttpUrl): ApiResult<String> {
-        val response = execute(requestBuilder(url).get().build()).getOrElse { return ApiResult.Failed(Failure.OFFLINE, it.message) }
-        return response.use {
-            if (!it.isSuccessful) ApiResult.Failed(failureFor(it.code), "HTTP ${it.code}")
-            else ApiResult.Ok(withContext(Dispatchers.IO) { it.body?.string().orEmpty() })
-        }
+        val raw = send(requestBuilder(url).get().build()).getOrElse { return ApiResult.Failed(Failure.OFFLINE, it.message) }
+        return if (raw.ok) ApiResult.Ok(raw.body) else ApiResult.Failed(failureFor(raw.code), "HTTP ${raw.code}")
     }
 
     private suspend inline fun <reified T> getJson(url: okhttp3.HttpUrl): ApiResult<T> {
@@ -90,8 +101,8 @@ class RedditApi(
         val token = ensureModhash() ?: return ApiResult.Failed(Failure.SIGNED_OUT, "no modhash")
         val form = FormBody.Builder().apply { for ((k, v) in fields) add(k, v); add("raw_json", "1") }.build()
         val request = requestBuilder(url(path)).header("X-Modhash", token).post(form).build()
-        val response = execute(request).getOrElse { return ApiResult.Failed(Failure.OFFLINE, it.message) }
-        return response.use { if (it.isSuccessful) ApiResult.Ok(Unit) else ApiResult.Failed(failureFor(it.code), "HTTP ${it.code}") }
+        val raw = send(request).getOrElse { return ApiResult.Failed(Failure.OFFLINE, it.message) }
+        return if (raw.ok) ApiResult.Ok(Unit) else ApiResult.Failed(failureFor(raw.code), "HTTP ${raw.code}")
     }
 
     // ---- account ----------------------------------------------------------------------------------------------------------
