@@ -2,6 +2,7 @@ package com.everettpenne.seekur.ui.screens
 
 import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,7 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.text.style.TextAlign
 import coil3.SingletonImageLoader
+import com.everettpenne.seekur.data.AppIcon
+import com.everettpenne.seekur.data.AppIcons
 import com.everettpenne.seekur.BuildConfig
 import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.glass.*
@@ -51,6 +57,12 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit) {
             Group("Saved Posts", footer = "On: the bookmark keeps a post on this phone only and never touches your Reddit account. " +
                 "${localCount.size} saved here. Your Reddit saved list is left as it is; turning this off shows it again.") {
                 SwitchRow(Icons.Rounded.PhoneAndroid, "Save on this device", saveLocally, settings::setSaveLocally)
+            }
+            var icon by remember { mutableStateOf(AppIcons.current(context)) }
+            Group("App Icon", footer = "Your launcher may take a moment to update, and some show a brief flicker.") {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    for (option in AppIcon.entries) IconChoice(option, selected = option == icon) { AppIcons.select(context, option); icon = option }
+                }
             }
             Group("Feeds") {
                 SwitchRow(Icons.Rounded.Layers, "Remember Selected Feed", persistFeed, settings::setPersistFeed)
@@ -109,3 +121,15 @@ private fun NavRow(icon: ImageVector, title: String, subtitle: String?, onClick:
 @Composable
 private fun SwitchRow(icon: ImageVector, title: String, checked: Boolean, onChange: (Boolean) -> Unit) =
     RowShell(icon, title, null, { onChange(!checked) }) { LiquidSwitch(checked, onChange) }
+
+@Composable
+private fun IconChoice(option: AppIcon, selected: Boolean, onClick: () -> Unit) {
+    Column(Modifier.width(72.dp).clickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        AndroidView(
+            factory = { ctx -> android.widget.ImageView(ctx).apply { setImageDrawable(androidx.core.content.ContextCompat.getDrawable(ctx, option.mipmap)) } },
+            modifier = Modifier.size(60.dp).then(if (selected) Modifier.border(2.5.dp, Seekur.accent, RoundedCornerShape(18.dp)).padding(3.dp) else Modifier.padding(3.dp)).clip(RoundedCornerShape(15.dp)),
+        )
+        Text(option.label, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center,
+            color = if (selected) Seekur.accent else MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}

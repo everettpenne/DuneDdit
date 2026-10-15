@@ -34,4 +34,21 @@ class IconShotTest {
         // Small, as in a launcher grid.
         val small = Bitmap.createScaledBitmap(circle, 96, 96, true); save("icon-96", Bitmap.createScaledBitmap(small, 384, 384, false))
     }
+
+    /** The peeking-worm alternates, as a launcher would draw them (rounded square), saved for a look. */
+    @Test fun renderAlternates() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val dir = File(context.getExternalFilesDir(null), "shots").apply { mkdirs() }
+        val size = 512
+        for ((name, id) in listOf("orange" to R.mipmap.ic_launcher_peek_orange, "pearl" to R.mipmap.ic_launcher_peek_pearl, "blue" to R.mipmap.ic_launcher_peek_blue)) {
+            val icon = context.getDrawable(id) as AdaptiveIconDrawable
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val c = Canvas(bitmap)
+            c.clipPath(Path().apply { addRoundRect(0f, 0f, size.toFloat(), size.toFloat(), size * .24f, size * .24f, Path.Direction.CW) })
+            // A launcher shows the middle 72 of the layers' 108: draw them 1.5 times the size, centred, then mask.
+            val bleed = size / 4
+            for (layer in listOfNotNull(icon.background, icon.foreground)) { layer.setBounds(-bleed, -bleed, size + bleed, size + bleed); layer.draw(c) }
+            File(dir, "peek-$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        }
+    }
 }

@@ -18,10 +18,6 @@
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <!-- Reddit links open in Seekur: https://reddit.com/r/<sub>, .../comments/<id>/..., and the short redd.it/<id>. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -37,5 +33,61 @@
                 <data android:pathPrefix="/user/" />
             </intent-filter>
         </activity>
+        <!-- The original sandworm icon. Exactly one alias is enabled at a time (see AppIcons); MainActivity itself stays enabled so links always open. -->
+        <activity-alias
+            android:name=".IconSandworm"
+            android:targetActivity=".MainActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <!-- Peeking worm, orange. Exactly one alias is enabled at a time (see AppIcons); MainActivity itself stays enabled so links always open. -->
+        <activity-alias
+            android:name=".IconPeekOrange"
+            android:targetActivity=".MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_peek_orange"
+            android:roundIcon="@mipmap/ic_launcher_peek_orange"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <!-- Peeking worm, pearl. Exactly one alias is enabled at a time (see AppIcons); MainActivity itself stays enabled so links always open. -->
+        <activity-alias
+            android:name=".IconPeekPearl"
+            android:targetActivity=".MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_peek_pearl"
+            android:roundIcon="@mipmap/ic_launcher_peek_pearl"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <!-- Peeking worm, blue. Exactly one alias is enabled at a time (see AppIcons); MainActivity itself stays enabled so links always open. -->
+        <activity-alias
+            android:name=".IconPeekBlue"
+            android:targetActivity=".MainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_peek_blue"
+            android:roundIcon="@mipmap/ic_launcher_peek_blue"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
     </application>
 </manifest>
