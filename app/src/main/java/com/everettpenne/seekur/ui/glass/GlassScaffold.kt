@@ -44,8 +44,8 @@ fun GlassTopBar(title: String, modifier: Modifier = Modifier, subtitle: String? 
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (onBack != null) GlassIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.headlineMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    fontSize = if (onBack != null) 26.sp else 34.sp)
+                Text(title, style = if (onBack != null) MaterialTheme.typography.headlineMedium else com.everettpenne.seekur.ui.theme.IosType.largeTitle.copy(fontWeight = FontWeight.Bold),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
             actions()
@@ -61,7 +61,7 @@ fun GlassCenteredTopBar(title: String, onBack: () -> Unit, modifier: Modifier = 
         Box(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 14.dp).heightIn(min = 44.dp)) {
             GlassIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack, Modifier.align(Alignment.CenterStart))
             Column(Modifier.align(Alignment.Center).padding(horizontal = 56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
             Box(Modifier.align(Alignment.CenterEnd)) { trailing() }
@@ -116,7 +116,7 @@ fun GlassTabBar(selected: Tab?, onSelect: (Tab) -> Unit, modifier: Modifier = Mo
                     .clickable(interactionSource = null, indication = null, role = Role.Tab) { onSelect(tab) }.semantics { contentDescription = tab.label },
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Icon(tab.icon, null, tint = if (on) Seekur.accent else ink, modifier = Modifier.size(26.dp))
-                    Text(tab.label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (on) Seekur.accent else ink)
+                    Text(tab.label, style = com.everettpenne.seekur.ui.theme.IosType.caption1.copy(fontWeight = FontWeight.SemiBold), color = if (on) Seekur.accent else ink)
                 }
             }
         }

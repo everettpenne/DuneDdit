@@ -92,7 +92,7 @@ fun GlassMenuItem(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
         .background(if (pressed) LocalContentColor.current.copy(alpha = .12f) else Color.Transparent)
         .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick).padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(text, color = color, style = TextStyle(fontSize = 16.sp), modifier = Modifier.weight(1f))
+        Text(text, color = color, style = com.everettpenne.seekur.ui.theme.IosType.callout, modifier = Modifier.weight(1f))
         if (selected) Icon(Icons.Rounded.Check, null, tint = color, modifier = Modifier.size(18.dp))
         else if (icon != null) Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
     }

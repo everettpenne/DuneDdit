@@ -94,7 +94,7 @@ fun GlassButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boo
         .clickable(interactionSource = null, indication = null, enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 18.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
         CompositionLocalProvider(LocalContentColor provides content_) {
-            androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium)) { content() }
+            androidx.compose.material3.ProvideTextStyle(com.everettpenne.seekur.ui.theme.IosType.subheadline.copy(fontWeight = FontWeight.SemiBold)) { content() }
         }
     }
 }
@@ -131,7 +131,7 @@ fun GlassChip(selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modif
         .selectable(selected = selected, role = Role.RadioButton, interactionSource = null, indication = null, onClick = onClick).padding(horizontal = 14.dp),
         contentAlignment = Alignment.Center) {
         CompositionLocalProvider(LocalContentColor provides (if (selected) Color.White else ink)) {
-            androidx.compose.material3.ProvideTextStyle(TextStyle(fontSize = 14.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)) { label() }
+            androidx.compose.material3.ProvideTextStyle(com.everettpenne.seekur.ui.theme.IosType.footnote.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)) { label() }
         }
     }
 }

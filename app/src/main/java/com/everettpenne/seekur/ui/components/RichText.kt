@@ -54,8 +54,9 @@ fun MarkdownText(source: String, modifier: Modifier = Modifier, compact: Boolean
         Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             for (b in blocks) when (b) {
                 is Markdown.Block.Paragraph -> Text(b.spans.toAnnotated(codeBg), color = color, style = MaterialTheme.typography.bodyLarge)
-                is Markdown.Block.Heading -> Text(b.spans.toAnnotated(codeBg), color = color, fontWeight = FontWeight.Bold,
-                    fontSize = when (b.level) { 1 -> 22.sp; 2 -> 20.sp; else -> 17.sp })
+                is Markdown.Block.Heading -> Text(b.spans.toAnnotated(codeBg), color = color,
+                    style = when (b.level) { 1 -> com.everettpenne.seekur.ui.theme.IosType.title2; 2 -> com.everettpenne.seekur.ui.theme.IosType.title3; else -> com.everettpenne.seekur.ui.theme.IosType.headline }
+                        .copy(fontWeight = FontWeight.Bold))
                 is Markdown.Block.Quote -> Row(Modifier.height(IntrinsicSize.Min)) {
                     Box(Modifier.width(3.dp).fillMaxHeight().background(Seekur.accent.copy(alpha = .6f), RoundedCornerShape(2.dp)))
                     Text(b.spans.toAnnotated(codeBg), Modifier.padding(start = 10.dp), color = color.copy(alpha = .75f), style = MaterialTheme.typography.bodyLarge)
@@ -65,7 +66,7 @@ fun MarkdownText(source: String, modifier: Modifier = Modifier, compact: Boolean
                     Text(b.spans.toAnnotated(codeBg), color = color, style = MaterialTheme.typography.bodyLarge)
                 }
                 is Markdown.Block.CodeBlock -> Text(b.code, Modifier.fillMaxWidth().background(codeBg, RoundedCornerShape(8.dp)).padding(10.dp),
-                    fontFamily = FontFamily.Monospace, fontSize = 13.sp, color = color)
+                    style = com.everettpenne.seekur.ui.theme.IosType.footnote.copy(fontFamily = FontFamily.Monospace), color = color)
                 Markdown.Block.Rule -> Box(Modifier.fillMaxWidth().height(1.dp).background(color.copy(alpha = .2f)))
             }
         }

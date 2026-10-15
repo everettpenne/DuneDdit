@@ -73,7 +73,7 @@ fun PostCard(post: Post, nav: Navigator, compact: Boolean, modifier: Modifier = 
             .then(if (compact) Modifier.combinedClickable(onClick = { nav.openPost(post) }, onLongClick = { menu = true }) else Modifier)
             .padding(if (compact && !nested) 12.dp else 0.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(post.title, style = MaterialTheme.typography.titleMedium, fontSize = 19.sp, maxLines = if (compact) 3 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
+            Text(post.title, style = MaterialTheme.typography.titleMedium, maxLines = if (compact) 3 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
             post.linkFlairText?.let { flair ->
                 Text(flair, style = MaterialTheme.typography.labelSmall,
                     color = if (post.flairBackground != null && post.flairTextLight) Color.White else Color.Black,
@@ -171,7 +171,7 @@ fun VoteBar(initialLikes: Boolean?, initialUps: Int, fullname: String, small: Bo
             Icon(Icons.Rounded.ArrowUpward, null, tint = if (likes == true) Seekur.indigo else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(iconSize))
         }
         AnimatedContent(ups, label = "score") { n ->
-            Text(n.compact(), fontWeight = FontWeight.SemiBold, fontSize = if (small) 13.sp else 15.sp,
+            Text(n.compact(), style = (if (small) com.everettpenne.seekur.ui.theme.IosType.footnote else com.everettpenne.seekur.ui.theme.IosType.subheadline).copy(fontWeight = FontWeight.SemiBold),
                 color = when (likes) { true -> Seekur.indigo; false -> Seekur.red; null -> MaterialTheme.colorScheme.onSurfaceVariant })
         }
         Box(Modifier.size(if (small) 28.dp else 34.dp).clip(CircleShape).clickable { vote(false) }.semantics { contentDescription = "Downvote" }, contentAlignment = Alignment.Center) {
