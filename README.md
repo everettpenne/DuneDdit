@@ -1,5 +1,7 @@
 # DuneDdit: Seekur
 
+<img src="docs/icon.png" alt="Seekur app icon: an orange sandworm arching out of a dune under twin moons" width="128" align="right" />
+
 **Seekur** is an Android Reddit client with iOS 26-style liquid glass. It is a port of [SwiftDdit / Lurker](https://github.com/SilverMarcs/SwiftDdit)
 (a SwiftUI client by Zabir Raihan) to Kotlin and Jetpack Compose, and uses the same glass library as Uno Launcher
 ([Backdrop](https://github.com/Kyant0/AndroidLiquidGlass)) so surfaces, toggles, buttons and menus bend and blur what is behind them the way iOS's do.
