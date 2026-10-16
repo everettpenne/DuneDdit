@@ -48,6 +48,10 @@ object Routes {
 @Composable
 fun SeekurApp(deepLink: Uri?) {
     SeekurTheme {
+        val updater = com.everettpenne.updater.Updater.get(LocalContext.current, com.everettpenne.updater.UpdateConfig("everettpenne/DuneDdit", com.everettpenne.seekur.BuildConfig.VERSION_NAME))
+        // Debug builds skip the launch check so the emulator tests never meet a dialog; Settings > Check for Updates still works there.
+        LaunchedEffect(Unit) { if (!com.everettpenne.seekur.BuildConfig.DEBUG) updater.checkOnLaunch() }
+        com.everettpenne.updater.UpdateDialog(updater, "Seekur")
         val context = LocalContext.current
         val graph = context.graph
         val navController = rememberNavController()
@@ -77,7 +81,7 @@ fun SeekurApp(deepLink: Uri?) {
             })
         }) else null
 
-        CompositionLocalProvider(LocalImageViewer provides { urls, i -> viewer = urls to i }, LocalUriHandler provides uriHandler, LocalTabBar provides tabBar) {
+        CompositionLocalProvider(LocalImageViewer provides { urls, i -> viewer = urls to i }, LocalUriHandler provides uriHandler, LocalTabBar provides tabBar, com.everettpenne.updater.LocalUpdater provides updater) {
             // The plain page colour is also a glass backdrop, so controls drawn inside a scrolling page still have a surface to bend. It records
             // ONLY the colour, in a sibling of the screens: recording the screens themselves would make any glass control inside them sample a
             // layer that contains it, which sends the renderer into endless recursion and crashes the app.

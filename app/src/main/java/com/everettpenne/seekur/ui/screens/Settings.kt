@@ -1,5 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
+import com.everettpenne.updater.collectStatus
 import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -81,6 +82,7 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit) {
                 }
             }
             Group("About") {
+                com.everettpenne.updater.LocalUpdater.current?.let { u -> NavRow(androidx.compose.material.icons.Icons.Rounded.SystemUpdate, "Check for Updates", u.collectStatus()) { u.onSettingsRowClick() } }
                 NavRow(Icons.Rounded.Info, "Seekur ${BuildConfig.VERSION_NAME}", "An Android port of Lurker, with iOS-style liquid glass") {}
                 NavRow(Icons.Rounded.Code, "Open Source", "MIT licensed. Based on SwiftDdit (Lurker) by Zabir Raihan") {
                     context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/SilverMarcs/SwiftDdit")))
