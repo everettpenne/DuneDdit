@@ -1,6 +1,6 @@
 package com.everettpenne.seekur.ui.components
 
-import com.everettpenne.seekur.ui.glass.pressSwell
+import com.everettpenne.glass.pressSwell
 import androidx.compose.material.icons.automirrored.rounded.*
 import android.content.Intent
 import androidx.compose.animation.AnimatedContent
@@ -34,8 +34,8 @@ import com.everettpenne.seekur.data.api.ApiResult
 import com.everettpenne.seekur.data.api.RedditApi
 import com.everettpenne.seekur.data.model.*
 import com.everettpenne.seekur.graph
-import com.everettpenne.seekur.ui.glass.GlassDropdownMenu
-import com.everettpenne.seekur.ui.glass.GlassMenuItem
+import com.everettpenne.glass.GlassDropdownMenu
+import com.everettpenne.glass.GlassMenuItem
 import com.everettpenne.seekur.ui.theme.Seekur
 import com.everettpenne.seekur.util.compact
 import com.everettpenne.seekur.util.timeAgo
@@ -172,7 +172,7 @@ fun VoteBar(initialLikes: Boolean?, initialUps: Int, fullname: String, small: Bo
             Icon(Icons.Rounded.ArrowUpward, null, tint = if (likes == true) Seekur.indigo else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(iconSize))
         }
         AnimatedContent(ups, label = "score") { n ->
-            Text(n.compact(), style = (if (small) com.everettpenne.seekur.ui.theme.IosType.footnote else com.everettpenne.seekur.ui.theme.IosType.subheadline).copy(fontWeight = FontWeight.SemiBold),
+            Text(n.compact(), style = (if (small) com.everettpenne.glass.IosType.footnote else com.everettpenne.glass.IosType.subheadline).copy(fontWeight = FontWeight.SemiBold),
                 color = when (likes) { true -> Seekur.indigo; false -> Seekur.red; null -> MaterialTheme.colorScheme.onSurfaceVariant })
         }
         Box(Modifier.size(if (small) 28.dp else 34.dp).clip(CircleShape).pressSwell().clickable(interactionSource = null, indication = null) { vote(false) }.semantics { contentDescription = "Downvote" }, contentAlignment = Alignment.Center) {

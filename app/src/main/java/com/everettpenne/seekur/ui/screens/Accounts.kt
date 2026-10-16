@@ -1,7 +1,7 @@
 package com.everettpenne.seekur.ui.screens
 
-import com.everettpenne.seekur.ui.glass.pressSwell
-import com.everettpenne.seekur.ui.glass.GlassAlert
+import com.everettpenne.glass.pressSwell
+import com.everettpenne.glass.GlassAlert
 import android.annotation.SuppressLint
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
@@ -31,7 +31,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import coil3.compose.AsyncImage
 import com.everettpenne.seekur.data.api.ApiResult
 import com.everettpenne.seekur.graph
-import com.everettpenne.seekur.ui.glass.*
+import com.everettpenne.glass.*
 import com.everettpenne.seekur.ui.theme.Seekur
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

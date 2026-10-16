@@ -63,6 +63,8 @@ uninstall one before installing the other.
 
 ## Build
 
+The liquid-glass UI kit (components, theme, type scale) is the separate `Glass` project, pulled in with a Gradle `includeBuild("../Glass")`, so it must be checked out next to this folder.
+
 ```bash
 ./gradlew :app:testDebugUnitTest   # unit tests
 ./gradlew :app:installDebug        # build and install on a connected device

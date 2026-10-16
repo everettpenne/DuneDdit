@@ -27,7 +27,7 @@ import com.everettpenne.seekur.data.AppIcon
 import com.everettpenne.seekur.data.AppIcons
 import com.everettpenne.seekur.BuildConfig
 import com.everettpenne.seekur.graph
-import com.everettpenne.seekur.ui.glass.*
+import com.everettpenne.glass.*
 import com.everettpenne.seekur.ui.theme.Seekur
 
 @Composable

@@ -1,7 +1,7 @@
 package com.everettpenne.seekur.ui.screens
 
-import com.everettpenne.seekur.ui.glass.frostedGlass
-import com.everettpenne.seekur.ui.glass.GlassRefreshIndicator
+import com.everettpenne.glass.frostedGlass
+import com.everettpenne.glass.GlassRefreshIndicator
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.graphics.compositeOver
@@ -30,7 +30,7 @@ import com.everettpenne.seekur.data.api.Failure
 import com.everettpenne.seekur.data.model.*
 import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.components.*
-import com.everettpenne.seekur.ui.glass.*
+import com.everettpenne.glass.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 

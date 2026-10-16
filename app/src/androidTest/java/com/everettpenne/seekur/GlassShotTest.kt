@@ -16,9 +16,10 @@ import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.everettpenne.seekur.data.model.*
+import com.everettpenne.seekur.ui.Tab
 import com.everettpenne.seekur.ui.components.Navigator
 import com.everettpenne.seekur.ui.components.PostCard
-import com.everettpenne.seekur.ui.glass.*
+import com.everettpenne.glass.*
 import com.everettpenne.seekur.ui.screens.bottomContentPadding
 import com.everettpenne.seekur.ui.screens.topContentPadding
 import com.everettpenne.seekur.ui.theme.SeekurTheme
@@ -47,7 +48,7 @@ class GlassShotTest {
         compose.setContent {
             SeekurTheme {
                 val page = com.kyant.backdrop.backdrops.rememberLayerBackdrop()
-                CompositionLocalProvider(LocalGlassBackdrop provides page, LocalTabBar provides { GlassTabBar(Tab.Feed, {}) }) {
+                CompositionLocalProvider(LocalGlassBackdrop provides page, LocalTabBar provides { GlassTabBar(Tab.bar, Tab.Feed, {}, search = Tab.Search) }) {
                     GlassScreen(bars = {
                         GlassTopBar("Home", modifier = Modifier.align(Alignment.TopCenter)) {
                             GlassActionPill {
@@ -73,7 +74,7 @@ class GlassShotTest {
             SeekurTheme {
                 val page = com.kyant.backdrop.backdrops.rememberLayerBackdrop()
                 var screen by remember { mutableStateOf(0) }
-                val tabs: @Composable () -> Unit = { GlassTabBar(if (screen == 2) Tab.Search else Tab.Profile, {}) }
+                val tabs: @Composable () -> Unit = { GlassTabBar(Tab.bar, if (screen == 2) Tab.Search else Tab.Profile, {}, search = Tab.Search) }
                 CompositionLocalProvider(LocalGlassBackdrop provides page, LocalTabBar provides tabs) {
                     androidx.compose.foundation.layout.Box(Modifier.testTag("host")) {
                         when (screen) {

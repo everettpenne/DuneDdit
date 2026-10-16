@@ -1,6 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
-import com.everettpenne.seekur.ui.glass.GlassRefreshIndicator
+import com.everettpenne.glass.GlassRefreshIndicator
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,7 +28,7 @@ import com.everettpenne.seekur.data.model.Subreddit
 import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.components.Navigator
 import com.everettpenne.seekur.ui.components.SubredditIcon
-import com.everettpenne.seekur.ui.glass.*
+import com.everettpenne.glass.*
 import com.everettpenne.seekur.ui.theme.Seekur
 import kotlinx.coroutines.launch
 
@@ -100,7 +100,7 @@ fun ProfileScreen(nav: Navigator, onInbox: () -> Unit, onSaved: () -> Unit, onSe
         // The index down the right edge: tap a letter to jump to its section.
         if (letters.size > 1) Column(Modifier.align(Alignment.CenterEnd).padding(end = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             letters.forEach { l ->
-                Text(l, color = Seekur.accent, style = com.everettpenne.seekur.ui.theme.IosType.caption2.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                Text(l, color = Seekur.accent, style = com.everettpenne.glass.IosType.caption2.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                     modifier = Modifier.clickable { val i = rows.indexOfFirst { it is ProfileRow.Header && it.text == l }; if (i >= 0) scope.launch { listState.animateScrollToItem(i) } }.padding(horizontal = 6.dp, vertical = 2.dp))
             }
         }

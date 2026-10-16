@@ -1,14 +1,14 @@
 package com.everettpenne.seekur.ui.screens
 
-import com.everettpenne.seekur.ui.glass.frostedGlass
-import com.everettpenne.seekur.ui.glass.GlassScreen
+import com.everettpenne.glass.frostedGlass
+import com.everettpenne.glass.GlassScreen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.rounded.Close
-import com.everettpenne.seekur.ui.glass.GlassIconButton
-import com.everettpenne.seekur.ui.glass.glassSurface
+import com.everettpenne.glass.GlassIconButton
+import com.everettpenne.glass.glassSurface
 import com.everettpenne.seekur.ui.theme.Seekur
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,8 +33,8 @@ import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.components.Navigator
 import com.everettpenne.seekur.ui.components.PostCard
 import com.everettpenne.seekur.ui.components.SubredditIcon
-import com.everettpenne.seekur.ui.glass.GlassChip
-import com.everettpenne.seekur.ui.glass.GlassTopBar
+import com.everettpenne.glass.GlassChip
+import com.everettpenne.glass.GlassTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 

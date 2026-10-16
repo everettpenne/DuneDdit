@@ -29,7 +29,7 @@ import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.components.ImageViewer
 import com.everettpenne.seekur.ui.components.LocalImageViewer
 import com.everettpenne.seekur.ui.components.Navigator
-import com.everettpenne.seekur.ui.glass.*
+import com.everettpenne.glass.*
 import com.everettpenne.seekur.ui.screens.*
 import com.everettpenne.seekur.ui.theme.SeekurTheme
 import com.everettpenne.seekur.util.LinkRouter
@@ -72,7 +72,7 @@ fun SeekurApp(deepLink: Uri?) {
         val showTabBar = route != Routes.LOGIN
 
         val tabBar: (@Composable () -> Unit)? = if (showTabBar) ({
-            GlassTabBar(selected = lastTab, onSelect = { tab ->
+            GlassTabBar(Tab.bar, selected = lastTab, search = Tab.Search, onSelect = { tab ->
                 navController.navigate(tab.route) { popUpTo(Routes.FEED) { inclusive = false }; launchSingleTop = true }
             })
         }) else null

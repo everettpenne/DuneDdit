@@ -1,6 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
-import com.everettpenne.seekur.ui.glass.GlassRefreshIndicator
+import com.everettpenne.glass.GlassRefreshIndicator
 import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -37,7 +37,7 @@ import com.everettpenne.seekur.data.media.Comments
 import com.everettpenne.seekur.data.model.*
 import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.components.*
-import com.everettpenne.seekur.ui.glass.*
+import com.everettpenne.glass.*
 import com.everettpenne.seekur.ui.theme.Seekur
 import com.everettpenne.seekur.util.compact
 import com.everettpenne.seekur.util.timeAgo

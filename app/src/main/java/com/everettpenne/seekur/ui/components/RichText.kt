@@ -55,7 +55,7 @@ fun MarkdownText(source: String, modifier: Modifier = Modifier, compact: Boolean
             for (b in blocks) when (b) {
                 is Markdown.Block.Paragraph -> Text(b.spans.toAnnotated(codeBg), color = color, style = MaterialTheme.typography.bodyLarge)
                 is Markdown.Block.Heading -> Text(b.spans.toAnnotated(codeBg), color = color,
-                    style = when (b.level) { 1 -> com.everettpenne.seekur.ui.theme.IosType.title2; 2 -> com.everettpenne.seekur.ui.theme.IosType.title3; else -> com.everettpenne.seekur.ui.theme.IosType.headline }
+                    style = when (b.level) { 1 -> com.everettpenne.glass.IosType.title2; 2 -> com.everettpenne.glass.IosType.title3; else -> com.everettpenne.glass.IosType.headline }
                         .copy(fontWeight = FontWeight.Bold))
                 is Markdown.Block.Quote -> Row(Modifier.height(IntrinsicSize.Min)) {
                     Box(Modifier.width(3.dp).fillMaxHeight().background(Seekur.accent.copy(alpha = .6f), RoundedCornerShape(2.dp)))
@@ -66,7 +66,7 @@ fun MarkdownText(source: String, modifier: Modifier = Modifier, compact: Boolean
                     Text(b.spans.toAnnotated(codeBg), color = color, style = MaterialTheme.typography.bodyLarge)
                 }
                 is Markdown.Block.CodeBlock -> Text(b.code, Modifier.fillMaxWidth().background(codeBg, RoundedCornerShape(8.dp)).padding(10.dp),
-                    style = com.everettpenne.seekur.ui.theme.IosType.footnote.copy(fontFamily = FontFamily.Monospace), color = color)
+                    style = com.everettpenne.glass.IosType.footnote.copy(fontFamily = FontFamily.Monospace), color = color)
                 Markdown.Block.Rule -> Box(Modifier.fillMaxWidth().height(1.dp).background(color.copy(alpha = .2f)))
             }
         }

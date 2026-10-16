@@ -7,7 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import com.everettpenne.seekur.data.api.Failure
 import com.everettpenne.seekur.data.model.*
 import com.everettpenne.seekur.ui.components.Navigator
-import com.everettpenne.seekur.ui.glass.GlassScreen
+import com.everettpenne.glass.GlassScreen
 import com.everettpenne.seekur.ui.screens.PostDetailList
 import com.everettpenne.seekur.ui.theme.SeekurTheme
 import org.junit.Rule

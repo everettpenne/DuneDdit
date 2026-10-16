@@ -13,9 +13,9 @@ import com.everettpenne.seekur.data.api.ApiResult
 import com.everettpenne.seekur.data.model.Subreddit
 import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.components.SubredditIcon
-import com.everettpenne.seekur.ui.glass.GlassButton
-import com.everettpenne.seekur.ui.glass.GlassSheet
-import com.everettpenne.seekur.ui.glass.glassPalette
+import com.everettpenne.glass.GlassButton
+import com.everettpenne.glass.GlassSheet
+import com.everettpenne.glass.glassPalette
 import kotlinx.coroutines.launch
 
 /** About a subreddit: its numbers and description, and subscribing. Details are fetched when a link only gave a name. */

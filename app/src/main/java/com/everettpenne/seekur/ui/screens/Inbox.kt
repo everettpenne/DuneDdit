@@ -1,6 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
-import com.everettpenne.seekur.ui.glass.GlassRefreshIndicator
+import com.everettpenne.glass.GlassRefreshIndicator
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,8 +28,8 @@ import com.everettpenne.seekur.data.api.postNavigation
 import com.everettpenne.seekur.data.model.Message
 import com.everettpenne.seekur.data.model.PostNavigation
 import com.everettpenne.seekur.graph
-import com.everettpenne.seekur.ui.glass.GlassScreen
-import com.everettpenne.seekur.ui.glass.GlassCenteredTopBar
+import com.everettpenne.glass.GlassScreen
+import com.everettpenne.glass.GlassCenteredTopBar
 import com.everettpenne.seekur.util.timeAgo
 import kotlinx.coroutines.launch
 
