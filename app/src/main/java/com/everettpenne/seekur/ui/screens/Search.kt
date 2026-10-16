@@ -1,5 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
+import com.everettpenne.seekur.ui.glass.frostedGlass
 import com.everettpenne.seekur.ui.glass.GlassScreen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -74,7 +75,7 @@ fun SearchScreen(nav: Navigator) {
     val imeVisible = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
     GlassScreen(bars = {
         GlassTopBar("Search", modifier = Modifier.align(Alignment.TopCenter)) {
-            if (vm.query.isNotEmpty() || vm.subreddits.isNotEmpty() || vm.posts.isNotEmpty()) Box(Modifier.height(48.dp).glassSurface(RoundedCornerShape(percent = 50), blurRadius = 6f, lensHeight = 12f, lensAmount = 24f, shadowed = false)
+            if (vm.query.isNotEmpty() || vm.subreddits.isNotEmpty() || vm.posts.isNotEmpty()) Box(Modifier.height(48.dp).frostedGlass(RoundedCornerShape(percent = 50), lensHeight = 12f, lensAmount = 24f)
                 .clickable(interactionSource = null, indication = null) { vm.clear() }.padding(horizontal = 18.dp), Alignment.Center) { Text("Clear", color = Seekur.accent, style = MaterialTheme.typography.bodyLarge) }
         }
         Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().imePadding().padding(bottom = if (imeVisible) 8.dp else 92.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),

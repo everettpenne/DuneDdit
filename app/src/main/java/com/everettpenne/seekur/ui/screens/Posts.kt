@@ -1,5 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
+import com.everettpenne.seekur.ui.glass.frostedGlass
 import com.everettpenne.seekur.ui.glass.GlassRefreshIndicator
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -256,8 +257,7 @@ fun GlassField(value: String, onValueChange: (String) -> Unit, placeholder: Stri
     androidx.compose.foundation.text.BasicTextField(value, onValueChange, singleLine = true,
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = ink), cursorBrush = androidx.compose.ui.graphics.SolidColor(ink),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
-        modifier = modifier.fillMaxWidth().height(48.dp).glassSurface(androidx.compose.foundation.shape.RoundedCornerShape(percent = 50),
-            tint = ink.copy(alpha = .06f).compositeOver(glassPalette().tint), blurRadius = 6f, lensHeight = 10f, lensAmount = 20f, shadowed = false),
+        modifier = modifier.fillMaxWidth().height(48.dp).frostedGlass(androidx.compose.foundation.shape.RoundedCornerShape(percent = 50), lensHeight = 10f, lensAmount = 20f),
         decorationBox = { inner ->
             Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(Icons.Rounded.Search, null, tint = ink.copy(alpha = .6f), modifier = Modifier.size(20.dp))
