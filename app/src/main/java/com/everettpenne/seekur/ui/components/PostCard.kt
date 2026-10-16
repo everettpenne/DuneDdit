@@ -1,5 +1,6 @@
 package com.everettpenne.seekur.ui.components
 
+import com.everettpenne.seekur.ui.glass.pressSwell
 import androidx.compose.material.icons.automirrored.rounded.*
 import android.content.Intent
 import androidx.compose.animation.AnimatedContent
@@ -167,14 +168,14 @@ fun VoteBar(initialLikes: Boolean?, initialUps: Int, fullname: String, small: Bo
     val iconSize = if (small) 18.dp else 22.dp
     Row(Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = .07f), CircleShape).padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        Box(Modifier.size(if (small) 28.dp else 34.dp).clip(CircleShape).clickable { vote(true) }.semantics { contentDescription = "Upvote" }, contentAlignment = Alignment.Center) {
+        Box(Modifier.size(if (small) 28.dp else 34.dp).clip(CircleShape).pressSwell().clickable(interactionSource = null, indication = null) { vote(true) }.semantics { contentDescription = "Upvote" }, contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.ArrowUpward, null, tint = if (likes == true) Seekur.indigo else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(iconSize))
         }
         AnimatedContent(ups, label = "score") { n ->
             Text(n.compact(), style = (if (small) com.everettpenne.seekur.ui.theme.IosType.footnote else com.everettpenne.seekur.ui.theme.IosType.subheadline).copy(fontWeight = FontWeight.SemiBold),
                 color = when (likes) { true -> Seekur.indigo; false -> Seekur.red; null -> MaterialTheme.colorScheme.onSurfaceVariant })
         }
-        Box(Modifier.size(if (small) 28.dp else 34.dp).clip(CircleShape).clickable { vote(false) }.semantics { contentDescription = "Downvote" }, contentAlignment = Alignment.Center) {
+        Box(Modifier.size(if (small) 28.dp else 34.dp).clip(CircleShape).pressSwell().clickable(interactionSource = null, indication = null) { vote(false) }.semantics { contentDescription = "Downvote" }, contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.ArrowDownward, null, tint = if (likes == false) Seekur.red else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(iconSize))
         }
     }

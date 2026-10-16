@@ -1,5 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
+import com.everettpenne.seekur.ui.glass.GlassRefreshIndicator
 import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -124,7 +125,9 @@ fun PostDetailScreen(target: PostNavigation, nav: Navigator, onBack: () -> Unit)
             }
         }
     }) {
-        PullToRefreshBox(isRefreshing = false, onRefresh = { vm.load(resetPost = true) }, modifier = Modifier.fillMaxSize()) {
+        val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+        PullToRefreshBox(isRefreshing = false, onRefresh = { vm.load(resetPost = true) }, modifier = Modifier.fillMaxSize(), state = pullState,
+            indicator = { GlassRefreshIndicator(pullState, false, topContentPadding()) }) {
             PostDetailList(vm.post, comments, vm.collapsed, vm.loading, vm.failure, nav, listState,
                 onToggle = vm::toggleCollapse, onReply = { replyTo = it }, onRetry = { vm.load(resetPost = true) })
         }

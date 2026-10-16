@@ -1,5 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
+import com.everettpenne.seekur.ui.glass.GlassRefreshIndicator
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.graphics.compositeOver
@@ -147,7 +148,9 @@ fun PostsScreen(feed: PostFeed, nav: Navigator, onBack: (() -> Unit)? = null, on
             if (searchOpen) GlassField(vm.query, { vm.query = it }, "Search ${feed.displayName}", Modifier.padding(horizontal = 16.dp), onSubmit = vm::submitSearch)
         }
     }) {
-        PullToRefreshBox(isRefreshing = vm.refreshing, onRefresh = { if (!localList) vm.refresh() }, modifier = Modifier.fillMaxSize()) {
+        val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+        PullToRefreshBox(isRefreshing = vm.refreshing, onRefresh = { if (!localList) vm.refresh() }, modifier = Modifier.fillMaxSize(), state = pullState,
+            indicator = { GlassRefreshIndicator(pullState, vm.refreshing, topContentPadding()) }) {
             LazyColumn(Modifier.fillMaxSize(), state = listState,
                 contentPadding = PaddingValues(top = topContentPadding() + if (searchOpen) 56.dp else 0.dp, bottom = bottomContentPadding(), start = 8.dp, end = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {

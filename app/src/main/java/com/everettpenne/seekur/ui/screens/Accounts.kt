@@ -1,5 +1,7 @@
 package com.everettpenne.seekur.ui.screens
 
+import com.everettpenne.seekur.ui.glass.pressSwell
+import com.everettpenne.seekur.ui.glass.GlassAlert
 import android.annotation.SuppressLint
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
@@ -57,7 +59,7 @@ fun AccountsScreen(onBack: () -> Unit, onAdd: () -> Unit) {
                             if (a.id == active) Text("Active", style = MaterialTheme.typography.bodySmall, color = Seekur.green)
                         }
                         if (a.id == active) Icon(Icons.Rounded.CheckCircle, null, tint = Seekur.green)
-                        Icon(Icons.Rounded.Delete, "Remove account", tint = MaterialTheme.colorScheme.error, modifier = Modifier.clip(CircleShape).clickable { confirmDelete = a.id }.padding(6.dp))
+                        Icon(Icons.Rounded.Delete, "Remove account", tint = MaterialTheme.colorScheme.error, modifier = Modifier.clip(CircleShape).pressSwell().clickable(interactionSource = null, indication = null) { confirmDelete = a.id }.padding(6.dp))
                     }
                 }
             }
@@ -67,16 +69,7 @@ fun AccountsScreen(onBack: () -> Unit, onAdd: () -> Unit) {
         }
     }
     confirmDelete?.let { id ->
-        GlassSheet({ confirmDelete = null }) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("Remove this account?", style = MaterialTheme.typography.titleLarge, color = glassPalette().ink)
-                Text("You'll need to sign in again to use it.", color = glassPalette().ink.copy(alpha = .7f))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End)) {
-                    GlassButton("Cancel", { confirmDelete = null })
-                    GlassButton("Remove", { accounts.delete(id); confirmDelete = null }, prominent = true)
-                }
-            }
-        }
+        GlassAlert("Remove this account?", "You'll need to sign in again to use it.", "Remove", { accounts.delete(id); confirmDelete = null }, { confirmDelete = null }, destructive = true)
     }
 }
 

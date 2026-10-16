@@ -1,5 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
+import com.everettpenne.seekur.ui.glass.GlassRefreshIndicator
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -104,7 +105,9 @@ fun ProfileScreen(nav: Navigator, onInbox: () -> Unit, onSaved: () -> Unit, onSe
             }
         }
     }) {
-        PullToRefreshBox(isRefreshing = false, onRefresh = { vm.load(force = true) }, modifier = Modifier.fillMaxSize()) {
+        val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+        PullToRefreshBox(isRefreshing = false, onRefresh = { vm.load(force = true) }, modifier = Modifier.fillMaxSize(), state = pullState,
+            indicator = { GlassRefreshIndicator(pullState, false, topContentPadding()) }) {
             LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(top = topContentPadding() + 56.dp, bottom = bottomContentPadding(), start = 16.dp, end = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(rows, key = { r -> when (r) { is ProfileRow.Header -> "h_${r.text}"; is ProfileRow.Sub -> "s_${r.subreddit.id}_${r.subreddit.displayName}"; else -> r::class.simpleName.orEmpty() } }) { r ->

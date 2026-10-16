@@ -1,5 +1,6 @@
 package com.everettpenne.seekur.ui.screens
 
+import com.everettpenne.seekur.ui.glass.GlassRefreshIndicator
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -63,7 +64,9 @@ fun InboxScreen(onBack: () -> Unit, onOpenPost: (PostNavigation) -> Unit) {
     val vm: InboxViewModel = viewModel { InboxViewModel(graph) }
     LaunchedEffect(vm) { vm.start() }
     GlassScreen(bars = { GlassCenteredTopBar("Inbox", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
-        PullToRefreshBox(isRefreshing = false, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
+        val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
+        PullToRefreshBox(isRefreshing = false, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize(), state = pullState,
+            indicator = { GlassRefreshIndicator(pullState, false, topContentPadding()) }) {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = topContentPadding(), bottom = bottomContentPadding(), start = 12.dp, end = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(vm.messages, key = { it.id }) { m ->
