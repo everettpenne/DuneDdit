@@ -26,8 +26,8 @@ import com.everettpenne.seekur.data.model.PostFeed
 import com.everettpenne.seekur.data.model.PostNavigation
 import com.everettpenne.seekur.data.model.Subreddit
 import com.everettpenne.seekur.graph
-import com.everettpenne.seekur.ui.components.ImageViewer
-import com.everettpenne.seekur.ui.components.LocalImageViewer
+import com.everettpenne.media.ImageViewer
+import com.everettpenne.media.LocalImageViewer
 import com.everettpenne.seekur.ui.components.Navigator
 import com.everettpenne.glass.*
 import com.everettpenne.seekur.ui.screens.*

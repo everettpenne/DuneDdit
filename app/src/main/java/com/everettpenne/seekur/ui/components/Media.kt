@@ -40,9 +40,8 @@ import coil3.compose.AsyncImage
 import com.everettpenne.seekur.data.model.*
 import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.theme.Seekur
-
-/** Opens a set of images full screen; provided at the root so any post can use it. */
-val LocalImageViewer = compositionLocalOf<(List<String>, Int) -> Unit> { { _, _ -> } }
+import com.everettpenne.media.FullscreenVideo
+import com.everettpenne.media.LocalImageViewer
 
 @Composable
 fun RemoteImage(url: String, modifier: Modifier = Modifier, aspectRatio: Float? = null, contentScale: ContentScale = ContentScale.Crop, description: String? = null) {
@@ -117,6 +116,7 @@ fun VideoPlayer(url: String, width: Int, height: Int, thumbnail: String?, modifi
     val player = remember(url) { buildPlayer(context, url) }
     var playing by remember { mutableStateOf(false) }
     var started by remember(url) { mutableStateOf(false) }
+    var fullscreen by remember(url) { mutableStateOf(false) }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) { playing = isPlaying }
@@ -129,45 +129,18 @@ fun VideoPlayer(url: String, width: Int, height: Int, thumbnail: String?, modifi
     val ratio = if (width > 0 && height > 0) (width.toFloat() / height).coerceIn(.5f, 2f) else 16f / 9f
     Box(modifier.fillMaxWidth().aspectRatio(ratio).background(Color.Black)) {
         if (thumbnail != null && !started) RemoteImage(thumbnail, Modifier.fillMaxSize(), null, ContentScale.Fit)
-        AndroidView(factory = { c -> PlayerView(c).apply { useController = false; resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT; this.player = player } },
+        AndroidView(factory = { c -> PlayerView(c).apply { useController = false; resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT } },
+            update = { it.player = if (fullscreen) null else player }, onRelease = { it.player = null },
             modifier = Modifier.fillMaxSize().pointerInput(player) { detectTapGestures { if (player.isPlaying) player.pause() else player.play() } })
         if (!playing) PlayBadge(Modifier.align(Alignment.Center))
         Icon(if (muteOnPlay) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp, null, tint = Color.White,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).size(20.dp).clickable { player.volume = if (player.volume > 0f) 0f else 1f })
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 44.dp, bottom = 8.dp, start = 8.dp, top = 8.dp).size(20.dp).clickable { player.volume = if (player.volume > 0f) 0f else 1f })
+        Icon(Icons.Rounded.Fullscreen, "Full screen", tint = Color.White,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).size(24.dp).clickable { player.volume = 1f; fullscreen = true })
     }
+    if (fullscreen) FullscreenVideo(player) { fullscreen = false }
 }
 
 private fun buildPlayer(context: Context, url: String): ExoPlayer = ExoPlayer.Builder(context).build().apply {
     setMediaItem(MediaItem.fromUri(url)); repeatMode = Player.REPEAT_MODE_ONE; prepare()
-}
-
-/** Full-screen images with pinch to zoom and double tap to toggle, paged when there is more than one. */
-@Composable
-fun ImageViewer(urls: List<String>, start: Int, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Box(Modifier.fillMaxSize().background(Color.Black)) {
-            val state = rememberPagerState(initialPage = start.coerceIn(0, (urls.size - 1).coerceAtLeast(0))) { urls.size }
-            HorizontalPager(state, Modifier.fillMaxSize()) { page -> ZoomableImage(urls[page], onDismiss) }
-            Icon(Icons.Rounded.Close, "Close", tint = Color.White, modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp).size(28.dp).clickable(onClick = onDismiss))
-            if (urls.size > 1) Text("${state.currentPage + 1}/${urls.size}", color = Color.White, modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(16.dp))
-        }
-    }
-}
-
-@Composable
-private fun ZoomableImage(url: String, onTap: () -> Unit) {
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
-    Box(Modifier.fillMaxSize()
-        .pointerInput(Unit) { detectTapGestures(onTap = { if (scale == 1f) onTap() }, onDoubleTap = { if (scale > 1f) { scale = 1f; offsetX = 0f; offsetY = 0f } else scale = 2.5f }) }
-        .pointerInput(Unit) {
-            detectTransformGestures { _, pan, zoom, _ ->
-                scale = (scale * zoom).coerceIn(1f, 6f)
-                if (scale > 1f) { offsetX += pan.x; offsetY += pan.y } else { offsetX = 0f; offsetY = 0f }
-            }
-        }, contentAlignment = Alignment.Center) {
-        AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = scale; scaleY = scale; translationX = offsetX; translationY = offsetY })
-    }
 }
