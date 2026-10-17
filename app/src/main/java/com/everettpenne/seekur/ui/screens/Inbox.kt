@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -63,22 +64,28 @@ fun InboxScreen(onBack: () -> Unit, onOpenPost: (PostNavigation) -> Unit) {
     val graph = LocalContext.current.graph
     val vm: InboxViewModel = viewModel { InboxViewModel(graph) }
     LaunchedEffect(vm) { vm.start() }
-    GlassScreen(bars = { GlassCenteredTopBar("Inbox", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
+    GlassScreen(bars = { GlassCenteredTopBar("Inbox", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) { contentPadding ->
         val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
         PullToRefreshBox(isRefreshing = false, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize(), state = pullState,
-            indicator = { GlassRefreshIndicator(pullState, false, topContentPadding()) }) {
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = topContentPadding(), bottom = bottomContentPadding(), start = 12.dp, end = 12.dp),
+            indicator = { GlassRefreshIndicator(pullState, false, contentPadding.calculateTopPadding()) }) {
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding(), start = 12.dp, end = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(vm.messages, key = { it.id }) { m ->
                     val target = m.postNavigation(m.subredditPrefixed?.removePrefix("r/"))
                     Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
                         .then(if (target != null) Modifier.clickable { onOpenPost(target) } else Modifier).padding(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (m.isNew) Box(Modifier.padding(top = 6.dp).size(9.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                        // The dot column is reserved for read rows too, so unread and read titles stay aligned.
+                        Box(Modifier.padding(top = 6.dp).width(12.dp), contentAlignment = Alignment.TopCenter) {
+                            if (m.isNew) Box(Modifier.size(9.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                        }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(m.linkTitle ?: m.subject ?: "Message", style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text(m.linkTitle ?: m.subject ?: "Message",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = if (m.isNew) FontWeight.SemiBold else FontWeight.Normal),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (m.isNew) 1f else .66f),
+                                maxLines = 2, overflow = TextOverflow.Ellipsis)
                             Text(listOfNotNull(m.author?.let { "u/$it" }, m.subredditPrefixed, timeAgo(m.created)).joinToString(" · "),
                                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            m.body?.let { Text(it, style = MaterialTheme.typography.bodyMedium, maxLines = 4, overflow = TextOverflow.Ellipsis) }
+                            m.body?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (m.isNew) .9f else .6f), maxLines = 4, overflow = TextOverflow.Ellipsis) }
                         }
                     }
                     if (m == vm.messages.lastOrNull()) LaunchedEffect(m.id) { vm.loadMore() }

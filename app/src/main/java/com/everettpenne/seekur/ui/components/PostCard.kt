@@ -4,6 +4,14 @@ import com.everettpenne.glass.pressSwell
 import androidx.compose.material.icons.automirrored.rounded.*
 import android.content.Intent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -31,7 +39,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.everettpenne.seekur.data.api.ApiResult
-import com.everettpenne.seekur.data.api.RedditApi
 import com.everettpenne.seekur.data.model.*
 import com.everettpenne.seekur.graph
 import com.everettpenne.glass.GlassDropdownMenu
@@ -57,6 +64,7 @@ fun PostCard(post: Post, nav: Navigator, compact: Boolean, modifier: Modifier = 
     val blurNsfw by context.graph.settings.blurNsfw.collectAsState()
     val saveLocally by context.graph.settings.saveLocally.collectAsState()
     val localSaved by context.graph.localSaves.posts.collectAsState()
+    val toast = LocalToast.current
     var redditSaved by remember(post.id) { mutableStateOf(post.saved) }
     // With "save on this device" on, the bookmark means the local list and the Reddit account is never touched.
     val saved = if (saveLocally) localSaved.any { it.id == post.id } else redditSaved
@@ -65,7 +73,12 @@ fun PostCard(post: Post, nav: Navigator, compact: Boolean, modifier: Modifier = 
 
     fun toggleSave() {
         if (saveLocally) context.graph.localSaves.toggle(post)
-        else scope.launch { if (api.save(!redditSaved, post.fullname) is ApiResult.Ok) redditSaved = !redditSaved }
+        else scope.launch {
+            when (val r = api.save(!redditSaved, post.fullname)) {
+                is ApiResult.Ok -> redditSaved = !redditSaved
+                is ApiResult.Failed -> toast?.invoke(saveFailureMessage(r.reason))
+            }
+        }
     }
 
     Box(modifier) {
@@ -85,11 +98,14 @@ fun PostCard(post: Post, nav: Navigator, compact: Boolean, modifier: Modifier = 
             if (post.selftext.isNotEmpty()) MarkdownText(post.selftext, compact = compact, selectable = !compact)
             if (post.media != MediaType.None) {
                 val hide = blurNsfw && post.isNsfw && !revealed
+                val blurAmount by animateDpAsState(if (hide) 28.dp else 0.dp, spring(stiffness = Spring.StiffnessLow), label = "nsfw-blur")
                 Box {
-                    PostMedia(post.media, nsfwBlur = hide, modifier = if (hide) Modifier.blur(28.dp) else Modifier,
+                    PostMedia(post.media, nsfwBlur = hide, modifier = Modifier.blur(blurAmount),
                         repost = { original -> PostCard(original, nav, compact = true, nested = true) })
-                    if (hide) Text("NSFW · tap to reveal", color = Color.White, style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.align(Alignment.Center).background(Color.Black.copy(alpha = .6f), CircleShape).clickable { revealed = true }.padding(horizontal = 14.dp, vertical = 8.dp))
+                    if (hide) Box(Modifier.matchParentSize().clickable(interactionSource = null, indication = null) { revealed = true }, contentAlignment = Alignment.Center) {
+                        Text("NSFW · tap to reveal", color = Color.White, style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.background(Color.Black.copy(alpha = .6f), CircleShape).padding(horizontal = 14.dp, vertical = 8.dp))
+                    }
                 }
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = .6f)))
@@ -130,8 +146,8 @@ private fun Stat(icon: androidx.compose.ui.graphics.vector.ImageVector, text: St
 
 @Composable
 private fun CircleButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit, tint: Color = MaterialTheme.colorScheme.primary) {
-    Box(Modifier.size(38.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = .07f), CircleShape).clickable(onClick = onClick).semantics { contentDescription = description },
-        contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp)) }
+    Box(Modifier.size(44.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = .07f), CircleShape).clickable(onClick = onClick).semantics { contentDescription = description },
+        contentAlignment = Alignment.Center) { Icon(icon, null, tint = tint, modifier = Modifier.size(22.dp)) }
 }
 
 @Composable
@@ -153,42 +169,34 @@ fun VoteBar(initialLikes: Boolean?, initialUps: Int, fullname: String, small: Bo
     val api = LocalContext.current.graph.api
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
-    var likes by remember(fullname) { mutableStateOf(initialLikes) }
-    var ups by remember(fullname) { mutableIntStateOf(initialUps) }
+    val toast = LocalToast.current
+    val state = remember(fullname) { VoteBarState(initialLikes, initialUps) }
     fun vote(up: Boolean) {
         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        val before = likes to ups
-        val (nextLikes, delta) = VoteMath.apply(likes, up)
-        likes = nextLikes; ups += delta
+        val pending = state.apply(up)
         scope.launch {
-            val dir = when (nextLikes) { true -> RedditApi.Vote.UP; false -> RedditApi.Vote.DOWN; null -> RedditApi.Vote.NONE }
-            if (api.vote(dir, fullname) !is ApiResult.Ok) { likes = before.first; ups = before.second }
+            when (val r = api.vote(pending.dir, fullname)) {
+                is ApiResult.Ok -> Unit
+                is ApiResult.Failed -> { state.rollback(pending); toast?.invoke(voteFailureMessage(r.reason)) }
+            }
         }
     }
     val iconSize = if (small) 18.dp else 22.dp
+    val arrowSize = if (small) 28.dp else 34.dp
     Row(Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = .07f), CircleShape).padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        Box(Modifier.size(if (small) 28.dp else 34.dp).clip(CircleShape).pressSwell().clickable(interactionSource = null, indication = null) { vote(true) }.semantics { contentDescription = "Upvote" }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.ArrowUpward, null, tint = if (likes == true) Seekur.indigo else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(iconSize))
+        Box(Modifier.size(arrowSize).clip(CircleShape).pressSwell().clickable(interactionSource = null, indication = null) { vote(true) }.semantics { contentDescription = "Upvote" }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.ArrowUpward, null, tint = if (state.likes == true) Seekur.indigo else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(iconSize))
         }
-        AnimatedContent(ups, label = "score") { n ->
+        AnimatedContent(state.ups, label = "score", transitionSpec = {
+            (scaleIn(spring(stiffness = Spring.StiffnessMediumLow), initialScale = 1.5f) + fadeIn()) togetherWith
+                scaleOut(tween(durationMillis = 60), targetScale = .8f)
+        }) { n ->
             Text(n.compact(), style = (if (small) com.everettpenne.glass.IosType.footnote else com.everettpenne.glass.IosType.subheadline).copy(fontWeight = FontWeight.SemiBold),
-                color = when (likes) { true -> Seekur.indigo; false -> Seekur.red; null -> MaterialTheme.colorScheme.onSurfaceVariant })
+                color = when (state.likes) { true -> Seekur.indigo; false -> Seekur.red; null -> MaterialTheme.colorScheme.onSurfaceVariant })
         }
-        Box(Modifier.size(if (small) 28.dp else 34.dp).clip(CircleShape).pressSwell().clickable(interactionSource = null, indication = null) { vote(false) }.semantics { contentDescription = "Downvote" }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.ArrowDownward, null, tint = if (likes == false) Seekur.red else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(iconSize))
+        Box(Modifier.size(arrowSize).clip(CircleShape).pressSwell().clickable(interactionSource = null, indication = null) { vote(false) }.semantics { contentDescription = "Downvote" }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.ArrowDownward, null, tint = if (state.likes == false) Seekur.red else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(iconSize))
         }
-    }
-}
-
-object VoteMath {
-    /** The vote state and score change after tapping up or down: (new likes, score delta). */
-    fun apply(current: Boolean?, up: Boolean): Pair<Boolean?, Int> = when {
-        up && current == true -> null to -1
-        up && current == false -> true to 2
-        up -> true to 1
-        current == false -> null to 1
-        current == true -> false to -2
-        else -> false to -1
     }
 }

@@ -124,10 +124,10 @@ fun PostDetailScreen(target: PostNavigation, nav: Navigator, onBack: () -> Unit)
                 }
             }
         }
-    }) {
+    }) { contentPadding ->
         val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
         PullToRefreshBox(isRefreshing = false, onRefresh = { vm.load(resetPost = true) }, modifier = Modifier.fillMaxSize(), state = pullState,
-            indicator = { GlassRefreshIndicator(pullState, false, topContentPadding()) }) {
+            indicator = { GlassRefreshIndicator(pullState, false, contentPadding.calculateTopPadding()) }) {
             PostDetailList(vm.post, comments, vm.collapsed, vm.loading, vm.failure, nav, listState,
                 onToggle = vm::toggleCollapse, onReply = { replyTo = it }, onRetry = { vm.load(resetPost = true) })
         }
@@ -146,7 +146,7 @@ fun PostDetailScreen(target: PostNavigation, nav: Navigator, onBack: () -> Unit)
 fun PostDetailList(post: Post?, comments: List<Comment>, collapsed: Set<String>, loading: Boolean, failure: Failure?, nav: Navigator,
                    listState: androidx.compose.foundation.lazy.LazyListState, onToggle: (String) -> Unit, onReply: (String) -> Unit, onRetry: () -> Unit) {
     val side = Modifier.padding(horizontal = 16.dp)
-    LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(top = topContentPadding(), bottom = bottomContentPadding())) {
+    LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(top = contentTopPadding(), bottom = contentBottomPadding())) {
         item(key = "post") {
             post?.let { PostCard(it, nav, compact = false, modifier = side.widthIn(max = 800.dp).fillMaxWidth(), onReply = { onReply(it.fullname) }) }
         }
@@ -199,7 +199,7 @@ private fun CommentRow(c: Comment, collapsed: Boolean, onToggle: () -> Unit, nav
                     if (c.body.isNotEmpty()) MarkdownText(c.body, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .9f))
                     c.embeddedMedia.forEach { m -> RemoteImage(m.image.url, Modifier.widthIn(max = 320.dp).clip(RoundedCornerShape(10.dp)), m.image.aspectRatio, androidx.compose.ui.layout.ContentScale.FillWidth) }
                 } else if (c.hasChildren) {
-                    Text("[${c.childCount} ${if (c.childCount == 1) "reply" else "replies"}]", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+                    Text("[${c.childCount} ${if (c.childCount == 1) "reply" else "replies"}]", style = MaterialTheme.typography.bodySmall, color = Seekur.accent, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
                 }
             }
         }

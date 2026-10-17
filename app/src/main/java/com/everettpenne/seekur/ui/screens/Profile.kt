@@ -104,11 +104,11 @@ fun ProfileScreen(nav: Navigator, onInbox: () -> Unit, onSaved: () -> Unit, onSe
                     modifier = Modifier.clickable { val i = rows.indexOfFirst { it is ProfileRow.Header && it.text == l }; if (i >= 0) scope.launch { listState.animateScrollToItem(i) } }.padding(horizontal = 6.dp, vertical = 2.dp))
             }
         }
-    }) {
+    }) { contentPadding ->
         val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
         PullToRefreshBox(isRefreshing = false, onRefresh = { vm.load(force = true) }, modifier = Modifier.fillMaxSize(), state = pullState,
-            indicator = { GlassRefreshIndicator(pullState, false, topContentPadding()) }) {
-            LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(top = topContentPadding() + 56.dp, bottom = bottomContentPadding(), start = 16.dp, end = 28.dp),
+            indicator = { GlassRefreshIndicator(pullState, false, contentPadding.calculateTopPadding()) }) {
+            LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(top = contentPadding.calculateTopPadding() + 56.dp, bottom = contentPadding.calculateBottomPadding(), start = 16.dp, end = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(rows, key = { r -> when (r) { is ProfileRow.Header -> "h_${r.text}"; is ProfileRow.Sub -> "s_${r.subreddit.id}_${r.subreddit.displayName}"; else -> r::class.simpleName.orEmpty() } }) { r ->
                     when (r) {

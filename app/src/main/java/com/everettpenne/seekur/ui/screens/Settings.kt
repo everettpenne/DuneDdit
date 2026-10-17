@@ -49,8 +49,8 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit) {
     val localCount by context.graph.localSaves.posts.collectAsState()
     var cacheBytes by remember { mutableStateOf(SingletonImageLoader.get(context).diskCache?.size ?: 0L) }
 
-    GlassScreen(bars = { GlassCenteredTopBar("Settings", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = topContentPadding(), bottom = bottomContentPadding(), start = 16.dp, end = 16.dp),
+    GlassScreen(bars = { GlassCenteredTopBar("Settings", onBack = onBack, modifier = Modifier.align(Alignment.TopCenter)) }) { contentPadding ->
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding(), start = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(22.dp)) {
             Group("Reddit Login") {
                 NavRow(Icons.Rounded.Person, "Accounts", accounts.firstOrNull { it.id == activeId }?.userName?.let { "u/$it" }, onAccounts)
@@ -69,6 +69,8 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit) {
                 SwitchRow(Icons.Rounded.Layers, "Remember Selected Feed", persistFeed, settings::setPersistFeed)
                 SwitchRow(Icons.Rounded.SwapVert, "Remember Sort Order", persistSort, settings::setPersistSort)
                 SwitchRow(Icons.Rounded.ExpandCircleDown, "Hide Feed Switcher", hideSwitcher, settings::setHideFeedSwitcher)
+            }
+            Group("Content") {
                 SwitchRow(Icons.Rounded.VisibilityOff, "Blur NSFW Media", blur, settings::setBlurNsfw)
             }
             Group("Playback Settings") {

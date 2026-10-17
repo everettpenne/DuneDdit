@@ -5,7 +5,6 @@ import com.everettpenne.glass.GlassRefreshIndicator
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -137,6 +136,7 @@ fun PostsScreen(feed: PostFeed, nav: Navigator, onBack: (() -> Unit)? = null, on
                     if (feed.supportsSearch) PillIcon(Icons.Rounded.Search, "Search this subreddit", { searchOpen = !searchOpen; if (!searchOpen) vm.clearSearch() })
                     if (feed.canSort) MenuPillIcon(vm.sort.icon(), "Sort by ${vm.sort.label}") { close ->
                         ListingSort.basic.filter { feed.supportsBestSort || it != ListingSort.Best }.forEach { s -> GlassMenuItem(s.label, { close(); vm.changeSort(s) }, icon = s.icon(), selected = s == vm.sort) }
+                        MenuSection("Top")
                         ListingSort.topOptions.forEach { s -> GlassMenuItem("Top · ${s.label}", { close(); vm.changeSort(s) }, icon = s.icon(), selected = s == vm.sort) }
                     }
                     if (onSwitchFeed != null && !hideSwitcher) MenuPillIcon(feed.icon(), "Switch feed") { close ->
@@ -148,12 +148,12 @@ fun PostsScreen(feed: PostFeed, nav: Navigator, onBack: (() -> Unit)? = null, on
             }
             if (searchOpen) GlassField(vm.query, { vm.query = it }, "Search ${feed.displayName}", Modifier.padding(horizontal = 16.dp), onSubmit = vm::submitSearch)
         }
-    }) {
+    }) { contentPadding ->
         val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
         PullToRefreshBox(isRefreshing = vm.refreshing, onRefresh = { if (!localList) vm.refresh() }, modifier = Modifier.fillMaxSize(), state = pullState,
-            indicator = { GlassRefreshIndicator(pullState, vm.refreshing, topContentPadding()) }) {
+            indicator = { GlassRefreshIndicator(pullState, vm.refreshing, contentPadding.calculateTopPadding()) }) {
             LazyColumn(Modifier.fillMaxSize(), state = listState,
-                contentPadding = PaddingValues(top = topContentPadding() + if (searchOpen) 56.dp else 0.dp, bottom = bottomContentPadding(), start = 8.dp, end = 8.dp),
+                contentPadding = PaddingValues(top = contentPadding.calculateTopPadding() + if (searchOpen) 56.dp else 0.dp, bottom = contentPadding.calculateBottomPadding(), start = 8.dp, end = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (localList) item { Text("Saved on this device", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp)) }
                 itemsIndexed(posts, key = { _, p -> p.id }) { _, post -> PostCard(post, nav, compact = true, modifier = Modifier.widthIn(max = 800.dp).fillMaxWidth()) }
@@ -163,6 +163,7 @@ fun PostsScreen(feed: PostFeed, nav: Navigator, onBack: (() -> Unit)? = null, on
                         localList && posts.isEmpty() -> EmptyState(Icons.Rounded.BookmarkBorder, "Nothing saved yet", "Posts you save with the bookmark stay on this phone.")
                         localList -> Unit
                         vm.loading && vm.posts.isNotEmpty() -> LoadingRow()
+                        vm.failure != null && signedIn == null && vm.failure == Failure.BLOCKED -> SignInToBrowse(onSignIn)
                         vm.failure != null -> ErrorState(vm.failure!!, onRetry = { if (vm.posts.isEmpty()) vm.refresh() else vm.loadMore() })
                         !vm.loading && vm.posts.isEmpty() -> EmptyState(Icons.Rounded.Inbox, "Nothing here", "No posts to show.")
                     }
@@ -224,12 +225,6 @@ fun CommentSort.icon(): androidx.compose.ui.graphics.vector.ImageVector = when (
 }
 
 @Composable
-fun topContentPadding(): Dp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 64.dp
-
-@Composable
-fun bottomContentPadding(): Dp = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 104.dp
-
-@Composable
 fun LoadingRow() = Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) { CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp) }
 
 @Composable
@@ -248,6 +243,24 @@ fun EmptyState(icon: androidx.compose.ui.graphics.vector.ImageVector, title: Str
         Text(title, style = MaterialTheme.typography.titleLarge)
         Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+/** A signed-out person hitting a 403 (Reddit refuses anonymous requests) gets pointed at signing in, not left with "refused". */
+@Composable
+private fun SignInToBrowse(onSignIn: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(Icons.Rounded.PersonOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(44.dp))
+        Text("Reddit needs you to sign in", style = MaterialTheme.typography.titleLarge)
+        Text("Reddit refuses anonymous requests, so Popular and All need an account too.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        GlassButton("Add account", onSignIn, prominent = true)
+    }
+}
+
+/** A quiet section label inside a glass menu, so the "Top · …" periods read as a group rather than nine flat rows. */
+@Composable
+private fun androidx.compose.foundation.layout.ColumnScope.MenuSection(label: String) {
+    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 18.dp, top = 6.dp, bottom = 2.dp))
 }
 
 /** A glass search field. */

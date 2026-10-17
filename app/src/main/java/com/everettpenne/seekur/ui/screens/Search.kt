@@ -88,8 +88,8 @@ fun SearchScreen(nav: Navigator) {
                 GlassIconButton(Icons.Rounded.Close, "Clear search", { vm.clear() }, size = 48)
             }
         }
-    }) {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = topContentPadding(), bottom = 220.dp, start = 8.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    }) { contentPadding ->
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = contentPadding.calculateTopPadding(), bottom = 220.dp, start = 8.dp, end = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (vm.loading) item { LoadingRow() }
             vm.failure?.let { f -> item { ErrorState(f, onRetry = vm::submit) } }
             when (vm.scope) {

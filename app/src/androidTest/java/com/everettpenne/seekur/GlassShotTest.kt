@@ -20,8 +20,6 @@ import com.everettpenne.seekur.ui.Tab
 import com.everettpenne.seekur.ui.components.Navigator
 import com.everettpenne.seekur.ui.components.PostCard
 import com.everettpenne.glass.*
-import com.everettpenne.seekur.ui.screens.bottomContentPadding
-import com.everettpenne.seekur.ui.screens.topContentPadding
 import com.everettpenne.seekur.ui.theme.SeekurTheme
 import org.junit.Rule
 import org.junit.Test
@@ -56,8 +54,8 @@ class GlassShotTest {
                                 PillIcon(Icons.Rounded.Home, "Feed", {})
                             }
                         }
-                    }) {
-                        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = topContentPadding(), bottom = bottomContentPadding(), start = 8.dp, end = 8.dp),
+                    }) { contentPadding ->
+                        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding(), start = 8.dp, end = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)) { items(posts) { PostCard(it, nav, compact = true) } }
                     }
                 }

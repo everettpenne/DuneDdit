@@ -7,9 +7,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import com.kyant.backdrop.backdrops.layerBackdrop
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -29,6 +35,8 @@ import com.everettpenne.seekur.graph
 import com.everettpenne.media.ImageViewer
 import com.everettpenne.media.LocalImageViewer
 import com.everettpenne.seekur.ui.components.Navigator
+import com.everettpenne.seekur.ui.components.LocalToast
+import com.everettpenne.seekur.ui.components.ToastOverlay
 import com.everettpenne.glass.*
 import com.everettpenne.seekur.ui.screens.*
 import com.everettpenne.seekur.ui.theme.SeekurTheme
@@ -57,6 +65,8 @@ fun SeekurApp(deepLink: Uri?) {
         val navController = rememberNavController()
         var viewer by remember { mutableStateOf<Pair<List<String>, Int>?>(null) }
         var frontFeed by remember { mutableStateOf<PostFeed>(graph.settings.initialFeed()) }
+        var toast by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(toast) { if (toast != null) { kotlinx.coroutines.delay(2600); toast = null } }
 
         val navigator = remember(navController) {
             object : Navigator {
@@ -81,7 +91,8 @@ fun SeekurApp(deepLink: Uri?) {
             })
         }) else null
 
-        CompositionLocalProvider(LocalImageViewer provides { urls, i -> viewer = urls to i }, LocalUriHandler provides uriHandler, LocalTabBar provides tabBar, com.everettpenne.updater.LocalUpdater provides updater) {
+        CompositionLocalProvider(LocalImageViewer provides { urls, i -> viewer = urls to i }, LocalUriHandler provides uriHandler, LocalTabBar provides tabBar,
+            com.everettpenne.updater.LocalUpdater provides updater, LocalToast provides { toast = it }) {
             // The plain page colour is also a glass backdrop, so controls drawn inside a scrolling page still have a surface to bend. It records
             // ONLY the colour, in a sibling of the screens: recording the screens themselves would make any glass control inside them sample a
             // layer that contains it, which sends the renderer into endless recursion and crashes the app.
@@ -89,6 +100,7 @@ fun SeekurApp(deepLink: Uri?) {
             Box(Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize().layerBackdrop(pageBackdrop).background(MaterialTheme.colorScheme.background))
                 CompositionLocalProvider(LocalGlassBackdrop provides pageBackdrop) {
+                    Box(Modifier.fillMaxSize()) {
                     NavHost(navController, startDestination = Routes.FEED, modifier = Modifier.fillMaxSize(),
                         enterTransition = { fadeIn() }, exitTransition = { fadeOut() }, popEnterTransition = { fadeIn() }, popExitTransition = { fadeOut() }) {
                             composable(Routes.FEED) {
@@ -118,6 +130,9 @@ fun SeekurApp(deepLink: Uri?) {
                             composable(Routes.SETTINGS) { SettingsScreen(onBack = { navController.popBackStack() }, onAccounts = { navController.navigate(Routes.ACCOUNTS) }) }
                             composable(Routes.ACCOUNTS) { AccountsScreen(onBack = { navController.popBackStack() }, onAdd = { navController.navigate(Routes.LOGIN) }) }
                             composable(Routes.LOGIN) { LoginScreen(onDone = { navController.popBackStack() }, onCancel = { navController.popBackStack() }) }
+                    }
+                    ToastOverlay(toast, Modifier.align(Alignment.BottomCenter)
+                        .padding(start = 16.dp, end = 16.dp, bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 104.dp))
                     }
                 }
             }
