@@ -17,8 +17,8 @@ android {
         applicationId = "com.everettpenne.seekur"
         minSdk = 31
         targetSdk = 36
-        versionCode = 13
-        versionName = "0.6.1"
+        versionCode = 14
+        versionName = "0.6.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
