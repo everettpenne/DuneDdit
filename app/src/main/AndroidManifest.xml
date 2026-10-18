@@ -17,6 +17,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
+            android:supportsPictureInPicture="true"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode">
             <!-- Reddit links open in Seekur: https://reddit.com/r/<sub>, .../comments/<id>/..., and the short redd.it/<id>. -->
             <intent-filter>

@@ -34,6 +34,7 @@ import com.everettpenne.seekur.data.model.Subreddit
 import com.everettpenne.seekur.graph
 import com.everettpenne.media.ImageViewer
 import com.everettpenne.media.LocalImageViewer
+import com.everettpenne.media.VideoPip
 import com.everettpenne.seekur.ui.components.Navigator
 import com.everettpenne.seekur.ui.components.LocalToast
 import com.everettpenne.seekur.ui.components.ToastOverlay
@@ -134,6 +135,8 @@ fun SeekurApp(deepLink: Uri?) {
                     ToastOverlay(toast, Modifier.align(Alignment.BottomCenter)
                         .padding(start = 16.dp, end = 16.dp, bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 104.dp))
                     }
+                    // In picture-in-picture the small window owns the video through the shared Glass player.
+                    if (VideoPip.active) VideoPip.player?.let { com.everettpenne.media.VideoSurface(it, Modifier.fillMaxSize()) }
                 }
             }
             viewer?.let { (urls, i) -> ImageViewer(urls, i) { viewer = null } }

@@ -42,6 +42,7 @@ import com.everettpenne.seekur.graph
 import com.everettpenne.seekur.ui.theme.Seekur
 import com.everettpenne.media.FullscreenVideo
 import com.everettpenne.media.LocalImageViewer
+import com.everettpenne.media.VideoPip
 
 @Composable
 fun RemoteImage(url: String, modifier: Modifier = Modifier, aspectRatio: Float? = null, contentScale: ContentScale = ContentScale.Crop, description: String? = null) {
@@ -130,7 +131,7 @@ fun VideoPlayer(url: String, width: Int, height: Int, thumbnail: String?, modifi
     Box(modifier.fillMaxWidth().aspectRatio(ratio).background(Color.Black)) {
         if (thumbnail != null && !started) RemoteImage(thumbnail, Modifier.fillMaxSize(), null, ContentScale.Fit)
         AndroidView(factory = { c -> PlayerView(c).apply { useController = false; resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT } },
-            update = { it.player = if (fullscreen) null else player }, onRelease = { it.player = null },
+            update = { it.player = if (fullscreen || VideoPip.active) null else player }, onRelease = { it.player = null },
             modifier = Modifier.fillMaxSize().pointerInput(player) { detectTapGestures { if (player.isPlaying) player.pause() else player.play() } })
         if (!playing) PlayBadge(Modifier.align(Alignment.Center))
         Icon(if (muteOnPlay) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp, null, tint = Color.White,
@@ -139,6 +140,8 @@ fun VideoPlayer(url: String, width: Int, height: Int, thumbnail: String?, modifi
             modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).size(24.dp).clickable { player.volume = 1f; fullscreen = true })
     }
     if (fullscreen) FullscreenVideo(player) { fullscreen = false }
+    // Entering PiP closes the full-screen dialog so the small window (driven by the app shell) can own the video surface.
+    LaunchedEffect(VideoPip.active) { if (VideoPip.active) fullscreen = false }
 }
 
 private fun buildPlayer(context: Context, url: String): ExoPlayer = ExoPlayer.Builder(context).build().apply {

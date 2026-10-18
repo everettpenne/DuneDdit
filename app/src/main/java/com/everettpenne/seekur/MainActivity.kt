@@ -11,6 +11,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.everettpenne.media.VideoPip
+import com.everettpenne.media.enterVideoPip
 import com.everettpenne.seekur.ui.SeekurApp
 
 class MainActivity : ComponentActivity() {
@@ -26,5 +28,15 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         deepLink = intent.data
+    }
+
+    // A full-screen video floats into a small window when the user leaves the app; anything else (images, browsing) does not.
+    override fun onUserLeaveHint() {
+        if (!enterVideoPip(this)) super.onUserLeaveHint()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        VideoPip.active = isInPictureInPictureMode
     }
 }
