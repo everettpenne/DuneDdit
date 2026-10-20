@@ -86,3 +86,9 @@ app/src/main/java/com/everettpenne/seekur/
 ## Licence
 
 MIT. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Building with Glass
+
+The shared UI kit lives in its own repository, [Glass](https://github.com/everettpenne/Glass), checked out next to this one (`../Glass`) and built
+with it through `includeBuild`. `glass.version` names the Glass tag this app is built and released with; CI checks out exactly that tag. To
+build locally, check Glass out beside this repository at that tag (`git -C ../Glass checkout $(cat glass.version)`).
