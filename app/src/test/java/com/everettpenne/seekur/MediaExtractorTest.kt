@@ -79,4 +79,21 @@ class SavedCodecTest {
         assertEquals(emptyList<Post>(), com.everettpenne.seekur.data.SavedCodec.decode("garbage"))
         assertEquals(emptyList<Post>(), com.everettpenne.seekur.data.SavedCodec.decode(null))
     }
+
+    private fun gifPost(url: String, domain: String, preview: String = "") = """
+    {"kind":"t3","data":{"id":"g1","name":"t3_g1","title":"Gif","author":"ivy","subreddit":"gifs","ups":1,"num_comments":0,"created_utc":1700000000,
+     "permalink":"/r/gifs/comments/g1/gif/","url":"$url","domain":"$domain","is_self":false$preview}}
+    """.trimIndent()
+
+    @Test fun anAnimationPlaysAsALoopingVideoWhenRedditHasAnMp4OfIt() {
+        val preview = ""","preview":{"images":[{"source":{"url":"https://preview.redd.it/a.gif?s=1","width":400,"height":300},
+            "variants":{"mp4":{"source":{"url":"https://preview.redd.it/a.gif?format=mp4&amp;s=2","width":400,"height":300}}}}]}"""
+        val v = post(gifPost("https://i.redd.it/a.gif", "i.redd.it", preview)).media as MediaType.Video
+        assertEquals("https://preview.redd.it/a.gif?format=mp4&s=2", v.url); assertTrue(v.loops); assertEquals(400, v.width)
+    }
+
+    @Test fun anImgurGifvPlaysItsMp4Twin() {
+        val v = post(gifPost("https://i.imgur.com/abc.gifv", "i.imgur.com")).media as MediaType.Video
+        assertEquals("https://i.imgur.com/abc.mp4", v.url); assertTrue(v.loops)
+    }
 }

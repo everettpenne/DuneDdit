@@ -139,7 +139,7 @@ fun SeekurApp(deepLink: Uri?) {
                     if (VideoPip.active) VideoPip.player?.let { com.everettpenne.media.VideoSurface(it, Modifier.fillMaxSize()) }
                 }
             }
-            viewer?.let { (urls, i) -> ImageViewer(urls, i) { viewer = null } }
+            viewer?.let { (urls, i) -> ImageViewer(urls, i, saveAlbum = "Seekur") { viewer = null } }
         }
     }
 }

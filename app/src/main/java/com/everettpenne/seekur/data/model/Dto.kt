@@ -60,7 +60,10 @@ internal val RedditJson = Json {
     val images: List<PreviewImageDto>? = null,
     @SerialName("reddit_video_preview") val redditVideoPreview: VideoDto? = null,
 )
-@Serializable data class PreviewImageDto(val source: ImageSourceDto? = null)
+@Serializable data class PreviewImageDto(val source: ImageSourceDto? = null, val variants: PreviewVariantsDto? = null)
+/** Reddit's re-encodings of an animated picture; [mp4] is the same animation as a small video, which plays far better than the GIF. */
+@Serializable data class PreviewVariantsDto(val mp4: PreviewVariantDto? = null)
+@Serializable data class PreviewVariantDto(val source: ImageSourceDto? = null)
 @Serializable data class ImageSourceDto(val url: String? = null, val width: Int? = null, val height: Int? = null)
 @Serializable data class VideoDto(
     @SerialName("hls_url") val hlsUrl: String? = null,

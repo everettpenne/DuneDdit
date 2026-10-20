@@ -68,7 +68,7 @@ fun PostMedia(media: MediaType, nsfwBlur: Boolean, modifier: Modifier = Modifier
             is MediaType.Gif -> RemoteImage(media.image.url, Modifier.fillMaxWidth().clickable { openImages(listOf(media.image.url), 0) },
                 media.image.aspectRatio?.coerceIn(.4f, 3f), if (media.image.aspectRatio != null) ContentScale.Crop else ContentScale.FillWidth)
             is MediaType.Gallery -> Gallery(media.images)
-            is MediaType.Video -> VideoPlayer(media.url, media.width, media.height, media.thumbnailUrl)
+            is MediaType.Video -> VideoPlayer(media.url, media.width, media.height, media.thumbnailUrl, loops = media.loops)
             is MediaType.YouTube -> Box(Modifier.fillMaxWidth().clickable { uriHandler.openUri("https://www.youtube.com/watch?v=${media.videoId}") }) {
                 RemoteImage(media.image.url, Modifier.fillMaxWidth(), media.image.aspectRatio ?: (16f / 9f))
                 PlayBadge(Modifier.align(Alignment.Center))
@@ -110,9 +110,13 @@ private fun LinkCard(link: LinkMetadata, onClick: () -> Unit) {
     }
 }
 
-/** A Reddit-hosted video (HLS) played with Media3: it starts muted or not as set, loops, and a tap pauses or resumes it. */
+/**
+ * A video in a post, played with Media3: Reddit's own (HLS), a linked .mp4, or an animation shown as a looping video. It starts muted or not as set
+ * and loops. A tap anywhere opens it full screen with sound, the way Photos and the iOS Reddit apps do; the round buttons in the corner mute it in
+ * place or open it full screen. The full-screen player is the same player, so it carries on from where it was with no re-buffering.
+ */
 @Composable
-fun VideoPlayer(url: String, width: Int, height: Int, thumbnail: String?, modifier: Modifier = Modifier) {
+fun VideoPlayer(url: String, width: Int, height: Int, thumbnail: String?, modifier: Modifier = Modifier, loops: Boolean = false) {
     val context = LocalContext.current
     val settings = context.graph.settings
     val autoplay by settings.autoplay.collectAsState()
@@ -121,30 +125,50 @@ fun VideoPlayer(url: String, width: Int, height: Int, thumbnail: String?, modifi
     var playing by remember { mutableStateOf(false) }
     var started by remember(url) { mutableStateOf(false) }
     var fullscreen by remember(url) { mutableStateOf(false) }
+    var muted by remember(url) { mutableStateOf(muteOnPlay || loops) }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) { playing = isPlaying }
             override fun onRenderedFirstFrame() { started = true }
+            override fun onVolumeChanged(volume: Float) { muted = volume == 0f }
         }
         player.addListener(listener)
         onDispose { player.removeListener(listener); player.release() }
     }
-    LaunchedEffect(player, autoplay, muteOnPlay) { player.volume = if (muteOnPlay) 0f else 1f; player.playWhenReady = autoplay }
+    LaunchedEffect(player, autoplay, muteOnPlay) { player.volume = if (muteOnPlay || loops) 0f else 1f; player.playWhenReady = autoplay }
+    fun openFullscreen() { player.volume = 1f; player.play(); fullscreen = true }
     val ratio = if (width > 0 && height > 0) (width.toFloat() / height).coerceIn(.5f, 2f) else 16f / 9f
-    Box(modifier.fillMaxWidth().aspectRatio(ratio).background(Color.Black)) {
+    Box(modifier.fillMaxWidth().aspectRatio(ratio).background(Color.Black).clickable(onClickLabel = "Play full screen") { openFullscreen() }) {
         if (thumbnail != null && !started) RemoteImage(thumbnail, Modifier.fillMaxSize(), null, ContentScale.Fit)
-        AndroidView(factory = { c -> PlayerView(c).apply { useController = false; resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT } },
+        // the surface ignores touches; the Box above takes the tap
+        AndroidView(factory = { c -> PlayerView(c).apply { useController = false; resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT; isClickable = false; isFocusable = false } },
             update = { it.player = if (fullscreen || VideoPip.active) null else player }, onRelease = { it.player = null },
-            modifier = Modifier.fillMaxSize().pointerInput(player) { detectTapGestures { if (player.isPlaying) player.pause() else player.play() } })
+            modifier = Modifier.fillMaxSize())
         if (!playing) PlayBadge(Modifier.align(Alignment.Center))
-        Icon(if (muteOnPlay) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp, null, tint = Color.White,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 44.dp, bottom = 8.dp, start = 8.dp, top = 8.dp).size(20.dp).clickable { player.volume = if (player.volume > 0f) 0f else 1f })
-        Icon(Icons.Rounded.Fullscreen, "Full screen", tint = Color.White,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).size(24.dp).clickable { player.volume = 1f; fullscreen = true })
+        if (loops) Text("GIF", color = Color.White, style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.align(Alignment.BottomStart).padding(10.dp).background(Color.Black.copy(alpha = .55f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 2.dp))
+        Row(Modifier.align(Alignment.BottomEnd).padding(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (!loops) VideoButton(if (muted) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp, if (muted) "Unmute" else "Mute") {
+                player.volume = if (player.volume > 0f) 0f else 1f
+            }
+            VideoButton(Icons.Rounded.Fullscreen, "Full screen") { openFullscreen() }
+        }
     }
-    if (fullscreen) FullscreenVideo(player) { fullscreen = false }
+    if (fullscreen) FullscreenVideo(player) {
+        fullscreen = false
+        // back in the feed it follows the feed's sound setting again
+        player.volume = if (muteOnPlay || loops) 0f else 1f
+    }
     // Entering PiP closes the full-screen dialog so the small window (driven by the app shell) can own the video surface.
     LaunchedEffect(VideoPip.active) { if (VideoPip.active) fullscreen = false }
+}
+
+/** A round dark button on video: 40dp to touch, readable on any frame. */
+@Composable
+private fun VideoButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
+    Box(Modifier.size(40.dp).clip(CircleShape).background(Color.Black.copy(alpha = .5f)).clickable(onClickLabel = description, onClick = onClick), contentAlignment = Alignment.Center) {
+        Icon(icon, description, tint = Color.White, modifier = Modifier.size(22.dp))
+    }
 }
 
 private fun buildPlayer(context: Context, url: String): ExoPlayer = ExoPlayer.Builder(context).build().apply {

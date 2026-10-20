@@ -54,6 +54,12 @@ object MediaExtractor {
         if (url.endsWith(".gif") || url.endsWith(".gifv") || domain.contains("gfycat") || domain.contains("redgifs") ||
             (domain.contains("imgur") && (url.contains("gif") || url.contains("gifv")))) {
             val (imageUrl, size) = bestImage(data)
+            // An animation plays as a looping video when there is one: Reddit's mp4 re-encoding, or Imgur's .mp4 twin of a .gifv.
+            data.preview?.images?.firstOrNull()?.variants?.mp4?.source?.takeIf { it.url != null }?.let { mp4 ->
+                return MediaType.Video(mp4.url!!.unescapeHtml().replace("&amp;", "&"), mp4.width ?: 0, mp4.height ?: 0, imageUrl, loops = true)
+            }
+            if (domain.contains("imgur") && url.endsWith(".gifv"))
+                return MediaType.Video(url.removeSuffix(".gifv") + ".mp4", size?.first ?: 0, size?.second ?: 0, imageUrl, loops = true)
             if (imageUrl != null) return MediaType.Gif(GalleryImage(imageUrl, size?.first ?: 0, size?.second ?: 0))
         }
 

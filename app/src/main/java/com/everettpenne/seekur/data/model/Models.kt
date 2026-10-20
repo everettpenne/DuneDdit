@@ -47,7 +47,8 @@ import kotlinx.serialization.json.JsonObject
     @Serializable data object None : MediaType
     @Serializable data class Image(val image: GalleryImage) : MediaType
     @Serializable data class Gallery(val images: List<GalleryImage>) : MediaType
-    @Serializable data class Video(val url: String, val width: Int = 0, val height: Int = 0, val thumbnailUrl: String? = null) : MediaType
+    /** A video to play inline. [loops] marks an animation (a GIF shown as video): it has no sound worth a mute button. */
+    @Serializable data class Video(val url: String, val width: Int = 0, val height: Int = 0, val thumbnailUrl: String? = null, val loops: Boolean = false) : MediaType
     @Serializable data class YouTube(val videoId: String, val image: GalleryImage) : MediaType
     @Serializable data class Link(val metadata: LinkMetadata) : MediaType
     @Serializable data class Gif(val image: GalleryImage) : MediaType
