@@ -22,6 +22,7 @@ class Settings(context: Context) {
     private val _muteOnPlay = flag("muteOnPlay", false)
     private val _blurNsfw = flag("blurNsfw", true)
     private val _saveLocally = flag("saveLocally", false)
+    private val _linksInApp = flag("linksInApp", true)
 
     val persistFeed: StateFlow<Boolean> = _persistFeed.asStateFlow()
     val persistSort: StateFlow<Boolean> = _persistSort.asStateFlow()
@@ -39,6 +40,9 @@ class Settings(context: Context) {
     fun setMuteOnPlay(v: Boolean) = set("muteOnPlay", _muteOnPlay, v)
     fun setBlurNsfw(v: Boolean) = set("blurNsfw", _blurNsfw, v)
     fun setSaveLocally(v: Boolean) = set("saveLocally", _saveLocally, v)
+    /** Links outside Reddit open in the suite's built-in browser over the app (on by default), or in Vanadium or the phone's browser. */
+    val linksInApp: StateFlow<Boolean> = _linksInApp.asStateFlow()
+    fun setLinksInApp(v: Boolean) = set("linksInApp", _linksInApp, v)
 
     /** The front-page feed to open with: the last one when "remember" is on, otherwise Home. */
     fun initialFeed(): PostFeed =

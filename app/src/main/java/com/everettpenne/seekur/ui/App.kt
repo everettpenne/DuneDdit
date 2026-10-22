@@ -76,7 +76,9 @@ fun SeekurApp(deepLink: Uri?) {
                 override fun openUser(username: String) = navController.navigate(Routes.user(username))
             }
         }
-        val uriHandler = remember(navController) { AppUriHandler(context, navController) { urls -> viewer = urls to 0 } }
+        // Links outside Reddit go to the suite's browser (BrowserHost below), which this handler reaches through openWeb once it is drawn.
+        val openWeb = remember { mutableStateOf<(String) -> Unit>({ url -> com.everettpenne.browser.Browsers.openOutside(context, url) }) }
+        val uriHandler = remember(navController) { AppUriHandler(navController, showImages = { urls -> viewer = urls to 0 }, openWeb = { openWeb.value(it) }) }
         LaunchedEffect(deepLink) { deepLink?.let { uriHandler.openUri(it.toString()) } }
 
         val backStack by navController.currentBackStackEntryAsState()
@@ -92,6 +94,10 @@ fun SeekurApp(deepLink: Uri?) {
             })
         }) else null
 
+        val linksInApp by graph.settings.linksInApp.collectAsState()
+        com.everettpenne.browser.BrowserHost(inApp = linksInApp) {
+        val browser = com.everettpenne.browser.LocalBrowser.current
+        SideEffect { openWeb.value = browser }
         CompositionLocalProvider(LocalImageViewer provides { urls, i -> viewer = urls to i }, LocalUriHandler provides uriHandler, LocalTabBar provides tabBar,
             com.everettpenne.updater.LocalUpdater provides updater, LocalToast provides { toast = it }) {
             // The plain page colour is also a glass backdrop, so controls drawn inside a scrolling page still have a surface to bend. It records
@@ -141,14 +147,15 @@ fun SeekurApp(deepLink: Uri?) {
             }
             viewer?.let { (urls, i) -> ImageViewer(urls, i, saveAlbum = "Seekur") { viewer = null } }
         }
+        }
     }
 }
 
 /** Sends a tapped link where it belongs: Reddit content inside the app, pictures to the viewer, everything else to the browser. */
 class AppUriHandler(
-    private val context: android.content.Context,
     private val nav: NavHostController,
     private val showImages: (List<String>) -> Unit,
+    private val openWeb: (String) -> Unit,
 ) : UriHandler {
     override fun openUri(uri: String) {
         when (val target = LinkRouter.parse(uri)) {
@@ -156,9 +163,7 @@ class AppUriHandler(
             is LinkTarget.Subreddit -> nav.navigate(Routes.subreddit(target.name))
             is LinkTarget.User -> nav.navigate(Routes.user(target.name))
             is LinkTarget.Image -> showImages(listOf(target.url))
-            is LinkTarget.External -> runCatching {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target.url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            }
+            is LinkTarget.External -> openWeb(target.url)
         }
     }
 }

@@ -43,6 +43,7 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit) {
     val autoplay by settings.autoplay.collectAsState()
     val mute by settings.muteOnPlay.collectAsState()
     val blur by settings.blurNsfw.collectAsState()
+    val linksInApp by settings.linksInApp.collectAsState()
     var cacheCleared by remember { mutableStateOf(false) }
 
     val saveLocally by settings.saveLocally.collectAsState()
@@ -72,6 +73,10 @@ fun SettingsScreen(onBack: () -> Unit, onAccounts: () -> Unit) {
             }
             Group("Content") {
                 SwitchRow(Icons.Rounded.VisibilityOff, "Blur NSFW Media", blur, settings::setBlurNsfw)
+            }
+            Group("Links", footer = if (linksInApp) "Links outside Reddit open in Seekur's own browser, over the app. On GrapheneOS it is Vanadium's WebView that draws them." else
+                "Links outside Reddit open in " + (if (com.everettpenne.browser.Browsers.hasVanadium(context)) "Vanadium." else "your browser.")) {
+                SwitchRow(Icons.Rounded.Language, "Open Links in Seekur", linksInApp, settings::setLinksInApp)
             }
             Group("Playback Settings") {
                 SwitchRow(Icons.Rounded.PlayArrow, "Autoplay Videos", autoplay, settings::setAutoplay)
