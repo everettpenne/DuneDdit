@@ -10,7 +10,8 @@ import com.everettpenne.seekur.R
  * switching enables the new one before disabling the old so the app is never briefly absent from the launcher.
  */
 enum class AppIcon(val alias: String, val label: String, val mipmap: Int, val enabledInManifest: Boolean = false) {
-    Sandworm("IconSandworm", "Sandworm", R.mipmap.ic_launcher, enabledInManifest = true),
+    Sandworm("IconSandworm", "Original Sandworm", R.mipmap.ic_launcher_original, enabledInManifest = true),
+    Seekur("IconSeekur", "Seekur", R.mipmap.ic_launcher),
     PeekOrange("IconPeekOrange", "Peek Orange", R.mipmap.ic_launcher_peek_orange),
     PeekPearl("IconPeekPearl", "Peek Pearl", R.mipmap.ic_launcher_peek_pearl),
     PeekBlue("IconPeekBlue", "Peek Blue", R.mipmap.ic_launcher_peek_blue),
