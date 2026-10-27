@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
@@ -116,6 +117,17 @@ fun PostsScreen(feed: PostFeed, nav: Navigator, onBack: (() -> Unit)? = null, on
     val listState = rememberLazyListState()
     val nearEnd by remember { derivedStateOf { val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0; last >= vm.posts.size - 4 } }
     LaunchedEffect(nearEnd, vm.posts.size) { if (nearEnd && vm.posts.isNotEmpty()) vm.loadMore() }
+    // The Feed tab tapped again: back to the top; tapped at the top, refresh.
+    if (onSwitchFeed != null) LaunchedEffect(vm) {
+        com.everettpenne.seekur.ui.TabReselect.events.collect { tab ->
+            if (tab == com.everettpenne.seekur.ui.Tab.Feed) {
+                if (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset < 40) vm.refresh()
+                else listState.animateScrollToItem(0)
+            }
+        }
+    }
+    // A new sort starts at the top of its list, not part-way down the old one.
+    LaunchedEffect(vm.sort) { listState.scrollToItem(0) }
     var searchOpen by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf<Sheet?>(null) }
     val graph = LocalContext.current.graph
@@ -146,7 +158,11 @@ fun PostsScreen(feed: PostFeed, nav: Navigator, onBack: (() -> Unit)? = null, on
                     if (feed is PostFeed.OfUser) PillIcon(Icons.Rounded.Info, "About u/${feed.username}", { sheet = Sheet.User(feed.username) })
                 }
             }
-            if (searchOpen) GlassField(vm.query, { vm.query = it }, "Search ${feed.displayName}", Modifier.padding(horizontal = 16.dp), onSubmit = vm::submitSearch)
+            if (searchOpen) {
+                val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+                LaunchedEffect(Unit) { focus.requestFocus() }
+                GlassField(vm.query, { vm.query = it }, "Search ${feed.displayName}", Modifier.padding(horizontal = 16.dp).focusRequester(focus), onSubmit = vm::submitSearch)
+            }
         }
     }) { contentPadding ->
         val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
@@ -169,7 +185,8 @@ fun PostsScreen(feed: PostFeed, nav: Navigator, onBack: (() -> Unit)? = null, on
                     }
                 }
             }
-            if (vm.loading && vm.posts.isEmpty() && vm.failure == null && !needsAccount && !localList) Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
+            if (vm.loading && vm.posts.isEmpty() && vm.failure == null && !needsAccount && !localList)
+                Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding() + 8.dp, start = 12.dp, end = 12.dp)) { PostSkeleton(3) }
             if (needsAccount) Column(Modifier.fillMaxSize().padding(32.dp), Arrangement.Center, Alignment.CenterHorizontally) {
                 EmptyState(Icons.Rounded.PersonOff, "Sign in to Reddit", "Your Home feed and saved posts need an account. Popular and All work with one too.")
                 Spacer(Modifier.height(12.dp)); GlassButton("Add account", onSignIn, prominent = true)

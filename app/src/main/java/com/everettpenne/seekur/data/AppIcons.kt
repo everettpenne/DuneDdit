@@ -35,5 +35,7 @@ object AppIcons {
         pm.setComponentEnabledSetting(component(context, icon), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
         for (other in AppIcon.entries) if (other != icon)
             pm.setComponentEnabledSetting(component(context, other), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
+        // The launcher shortcuts point at the enabled alias, so they move with the icon.
+        com.everettpenne.seekur.SeekurShortcuts.publish(context)
     }
 }

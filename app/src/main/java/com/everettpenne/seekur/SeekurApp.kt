@@ -23,6 +23,7 @@ class Graph(app: Context) {
     val settings = Settings(app)
     val favorites = Favorites(app)
     val localSaves = com.everettpenne.seekur.data.LocalSaves(app)
+    val readPosts = com.everettpenne.seekur.data.ReadPosts(app)
     val accounts = AccountsManager(app, SecureStore(app))
 
     /** Posts the person has just seen, so a post opens at once while its comments load. Small and in memory only. */

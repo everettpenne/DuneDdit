@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Seekur</string>
+    <!-- Shown by launchers that read android:description, and the words Uno matches in search beside the Dune name. -->
+    <string name="app_description">Reddit, read in glass: feeds, comments and saved posts.</string>
 </resources>

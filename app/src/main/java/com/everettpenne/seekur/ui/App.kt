@@ -3,6 +3,10 @@ package com.everettpenne.seekur.ui
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -44,6 +48,9 @@ import com.everettpenne.seekur.ui.theme.SeekurTheme
 import com.everettpenne.seekur.util.LinkRouter
 import com.everettpenne.seekur.util.LinkTarget
 
+/** How long a pushed screen takes to slide in or out, in ms. */
+private const val PUSH_MS = 320
+
 /** Where the navigation is told to go. Pure strings, so deep links and taps share them. */
 object Routes {
     const val FEED = "feed"; const val PROFILE = "profile"; const val SEARCH = "search"
@@ -55,7 +62,7 @@ object Routes {
 }
 
 @Composable
-fun SeekurApp(deepLink: Uri?) {
+fun SeekurApp(deepLink: Uri?, onDeepLinkHandled: () -> Unit = {}) {
     SeekurTheme {
         val updater = com.everettpenne.updater.Updater.get(LocalContext.current, com.everettpenne.updater.UpdateConfig("everettpenne/DuneDdit", com.everettpenne.seekur.BuildConfig.VERSION_NAME))
         // Debug builds skip the launch check so the emulator tests never meet a dialog; Settings > Check for Updates still works there.
@@ -71,7 +78,7 @@ fun SeekurApp(deepLink: Uri?) {
 
         val navigator = remember(navController) {
             object : Navigator {
-                override fun openPost(post: Post) { graph.postCache[post.id] = post; navController.navigate(Routes.post(post.id, post.subreddit.displayName)) }
+                override fun openPost(post: Post) { graph.postCache[post.id] = post; graph.readPosts.mark(post.id); navController.navigate(Routes.post(post.id, post.subreddit.displayName)) }
                 override fun openSubreddit(subreddit: Subreddit) = navController.navigate(Routes.subreddit(subreddit.displayName))
                 override fun openUser(username: String) = navController.navigate(Routes.user(username))
             }
@@ -79,7 +86,19 @@ fun SeekurApp(deepLink: Uri?) {
         // Links outside Reddit go to the suite's browser (BrowserHost below), which this handler reaches through openWeb once it is drawn.
         val openWeb = remember { mutableStateOf<(String) -> Unit>({ url -> com.everettpenne.browser.Browsers.openOutside(context, url) }) }
         val uriHandler = remember(navController) { AppUriHandler(navController, showImages = { urls -> viewer = urls to 0 }, openWeb = { openWeb.value(it) }) }
-        LaunchedEffect(deepLink) { deepLink?.let { uriHandler.openUri(it.toString()) } }
+        // A link or a shortcut's own scheme. Asking the caller to clear it afterwards means tapping the same shortcut twice works.
+        LaunchedEffect(deepLink) {
+            val link = deepLink ?: return@LaunchedEffect
+            when {
+                link.scheme == "seekur" && link.host == "inbox" -> navController.navigate(Routes.INBOX) { launchSingleTop = true }
+                link.scheme == "seekur" && link.host == "saved" -> navController.navigate(Routes.SAVED) { launchSingleTop = true }
+                link.scheme == "seekur" && link.host == "search" -> navController.navigate(Routes.SEARCH) { launchSingleTop = true }
+                link.scheme == "seekur" && link.host == "feed" ->
+                    navController.navigate(Routes.FEED) { popUpTo(Routes.FEED) { inclusive = false }; launchSingleTop = true }
+                else -> uriHandler.openUri(link.toString())
+            }
+            onDeepLinkHandled()
+        }
 
         val backStack by navController.currentBackStackEntryAsState()
         val route = backStack?.destination?.route
@@ -90,7 +109,9 @@ fun SeekurApp(deepLink: Uri?) {
 
         val tabBar: (@Composable () -> Unit)? = if (showTabBar) ({
             GlassTabBar(Tab.bar, selected = lastTab, search = Tab.Search, onSelect = { tab ->
-                navController.navigate(tab.route) { popUpTo(Routes.FEED) { inclusive = false }; launchSingleTop = true }
+                // Tapping the tab you are already on goes back to the top of its list (and, from the top, refreshes it), as iOS's tab bar does.
+                if (tab.route == route) TabReselect.events.tryEmit(tab)
+                else navController.navigate(tab.route) { popUpTo(Routes.FEED) { inclusive = false }; launchSingleTop = true }
             })
         }) else null
 
@@ -108,8 +129,27 @@ fun SeekurApp(deepLink: Uri?) {
                 Box(Modifier.fillMaxSize().layerBackdrop(pageBackdrop).background(MaterialTheme.colorScheme.background))
                 CompositionLocalProvider(LocalGlassBackdrop provides pageBackdrop) {
                     Box(Modifier.fillMaxSize()) {
+                    // Tabs cross-fade; a screen pushed from one (a post, a subreddit, Settings) slides in from the right over a page that
+                    // drifts left a little and dims, and slides back out the same way, as iOS's navigation does.
+                    val tabRoutes = remember { Tab.entries.map { it.route }.toSet() }
+                    fun pushed(route: String?) = route != null && route !in tabRoutes
                     NavHost(navController, startDestination = Routes.FEED, modifier = Modifier.fillMaxSize(),
-                        enterTransition = { fadeIn() }, exitTransition = { fadeOut() }, popEnterTransition = { fadeIn() }, popExitTransition = { fadeOut() }) {
+                        enterTransition = {
+                            if (pushed(targetState.destination.route)) slideInHorizontally(tween(PUSH_MS, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(PUSH_MS / 2))
+                            else fadeIn()
+                        },
+                        exitTransition = {
+                            if (pushed(targetState.destination.route)) slideOutHorizontally(tween(PUSH_MS, easing = FastOutSlowInEasing)) { -it / 4 } + fadeOut(tween(PUSH_MS), targetAlpha = .55f)
+                            else fadeOut()
+                        },
+                        popEnterTransition = {
+                            if (pushed(initialState.destination.route)) slideInHorizontally(tween(PUSH_MS, easing = FastOutSlowInEasing)) { -it / 4 } + fadeIn(tween(PUSH_MS), initialAlpha = .55f)
+                            else fadeIn()
+                        },
+                        popExitTransition = {
+                            if (pushed(initialState.destination.route)) slideOutHorizontally(tween(PUSH_MS, easing = FastOutSlowInEasing)) { it } + fadeOut(tween(PUSH_MS / 2, delayMillis = PUSH_MS / 2))
+                            else fadeOut()
+                        }) {
                             composable(Routes.FEED) {
                                 PostsScreen(frontFeed, navigator, onSwitchFeed = { frontFeed = it; graph.settings.rememberFeed(it) }, onSignIn = { navController.navigate(Routes.LOGIN) })
                             }

@@ -22,11 +22,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT), navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT))
         if (savedInstanceState == null) deepLink = intent?.data
-        setContent { SeekurApp(deepLink) }
+        setContent { SeekurApp(deepLink, onDeepLinkHandled = { deepLink = null }) }
+        SeekurShortcuts.publish(this)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         deepLink = intent.data
     }
 

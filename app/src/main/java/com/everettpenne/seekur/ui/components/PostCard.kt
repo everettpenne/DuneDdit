@@ -69,13 +69,17 @@ fun PostCard(post: Post, nav: Navigator, compact: Boolean, modifier: Modifier = 
     // With "save on this device" on, the bookmark means the local list and the Reddit account is never touched.
     val saved = if (saveLocally) localSaved.any { it.id == post.id } else redditSaved
     var menu by remember { mutableStateOf(false) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val readIds by context.graph.readPosts.ids.collectAsState()
+    // A post already opened has a quieter title in the feed (not on its own page, and not inside a repost).
+    val read = compact && !nested && post.id in readIds
     var revealed by remember(post.id) { mutableStateOf(false) }
 
     fun toggleSave() {
-        if (saveLocally) context.graph.localSaves.toggle(post)
+        if (saveLocally) { val now = context.graph.localSaves.toggle(post); haptic.performHapticFeedback(HapticFeedbackType.Confirm); toast?.invoke(if (now) "Saved on this device" else "Removed from saved") }
         else scope.launch {
             when (val r = api.save(!redditSaved, post.fullname)) {
-                is ApiResult.Ok -> redditSaved = !redditSaved
+                is ApiResult.Ok -> { redditSaved = !redditSaved; haptic.performHapticFeedback(HapticFeedbackType.Confirm); toast?.invoke(if (redditSaved) "Saved" else "Removed from saved") }
                 is ApiResult.Failed -> toast?.invoke(saveFailureMessage(r.reason))
             }
         }
@@ -84,10 +88,10 @@ fun PostCard(post: Post, nav: Navigator, compact: Boolean, modifier: Modifier = 
     Box(modifier) {
         Column(Modifier.fillMaxWidth()
             .then(if (compact && !nested) Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant) else Modifier)
-            .then(if (compact) Modifier.combinedClickable(onClick = { nav.openPost(post) }, onLongClick = { menu = true }) else Modifier)
+            .then(if (compact) Modifier.combinedClickable(onClick = { nav.openPost(post) }, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); menu = true }) else Modifier)
             .padding(if (compact && !nested) 12.dp else 0.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(post.title, style = MaterialTheme.typography.titleMedium, maxLines = if (compact) 3 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
+            Text(post.title, style = MaterialTheme.typography.titleMedium, color = if (read) MaterialTheme.colorScheme.onSurface.copy(alpha = .55f) else Color.Unspecified, maxLines = if (compact) 3 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
             post.linkFlairText?.let { flair ->
                 Text(flair, style = MaterialTheme.typography.labelSmall,
                     color = if (post.flairBackground != null && post.flairTextLight) Color.White else Color.Black,
