@@ -225,25 +225,15 @@ fun CommentSort.icon(): androidx.compose.ui.graphics.vector.ImageVector = when (
 }
 
 @Composable
-fun LoadingRow() = Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) { CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp) }
+fun LoadingRow() = com.everettpenne.glass.GlassSkeleton(count = 3, rowHeight = 52.dp, modifier = Modifier.padding(horizontal = 4.dp))
 
 @Composable
-fun ErrorState(failure: Failure, onRetry: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(Icons.Rounded.CloudOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(40.dp))
-        Text(failure.message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        GlassButton("Try again", onRetry)
-    }
-}
+fun ErrorState(failure: Failure, onRetry: () -> Unit) =
+    com.everettpenne.glass.GlassErrorState("Couldn't load", failure.message, onRetry, retryLabel = "Try again")
 
 @Composable
-fun EmptyState(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, message: String) {
-    Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(44.dp))
-        Text(title, style = MaterialTheme.typography.titleLarge)
-        Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
+fun EmptyState(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, message: String) =
+    com.everettpenne.glass.GlassEmptyState(icon, title, message)
 
 /** A signed-out person hitting a 403 (Reddit refuses anonymous requests) gets pointed at signing in, not left with "refused". */
 @Composable
