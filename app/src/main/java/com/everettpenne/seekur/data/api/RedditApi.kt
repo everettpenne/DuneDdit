@@ -151,10 +151,29 @@ class RedditApi(
         } catch (e: Exception) { ApiResult.Failed(Failure.BAD_RESPONSE, e.message) }
     }
 
+    /**
+     * Root cause of the "Reddit refused the request" on subreddit search while the feed and subreddit posts still worked: Reddit answers
+     * 403 for /subreddits/search.json specifically (the feed endpoints are untouched), so the whole search was reported as blocked.
+     * Fix: when that one endpoint is refused, ask the same question through the two other endpoints Reddit's own site uses for it
+     * (the generic search with type=sr, then the search-bar autocomplete); all three return the same listing of t5 things. Any
+     * non-block failure (offline, rate limit) is reported as is, and only if every endpoint is refused does the person see "refused".
+     */
     suspend fun searchSubreddits(query: String, limit: Int = 30): ApiResult<List<Subreddit>> {
         if (query.isBlank()) return ApiResult.Ok(emptyList())
-        return getJson<Listing<SubredditDto>>(url("/subreddits/search.json", "q" to query, "limit" to limit.toString(), "sort" to "relevance", "raw_json" to "1"))
-            .map { l -> l.data.children.filter { it.kind == "t5" }.map { Subreddit.from(it.data) } }
+        val attempts = listOf(
+            url("/subreddits/search.json", "q" to query, "limit" to limit.toString(), "sort" to "relevance", "raw_json" to "1"),
+            url("/search.json", "q" to query, "type" to "sr", "limit" to limit.toString(), "sort" to "relevance", "raw_json" to "1"),
+            url("/api/subreddit_autocomplete_v2.json", "query" to query, "limit" to limit.toString(), "include_over_18" to "true",
+                "include_profiles" to "false", "raw_json" to "1"),
+        )
+        var last: ApiResult.Failed = ApiResult.Failed(Failure.BAD_RESPONSE)
+        for (attempt in attempts) {
+            when (val r = getJson<Listing<SubredditDto>>(attempt)) {
+                is ApiResult.Ok -> return ApiResult.Ok(r.value.data.children.filter { it.kind == "t5" }.map { Subreddit.from(it.data) })
+                is ApiResult.Failed -> { last = r; if (r.reason != Failure.BLOCKED) return r }
+            }
+        }
+        return last
     }
 
     suspend fun searchPosts(query: String, subreddit: String? = null, limit: Int = 30): ApiResult<List<Post>> {

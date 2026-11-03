@@ -107,6 +107,16 @@ class RedditApiTest {
         assertTrue(body, "text=a%20%26%20b%20%3D%20c" in body && "thing_id=t1_parent" in body)
     }
 
+    @Test fun subredditSearchFallsBackWhenOneEndpointIsRefused() = runBlocking {
+        val sub = """{"kind":"Listing","data":{"children":[{"kind":"t5","data":{"id":"2qh","name":"t5_2qh","display_name":"dune","subscribers":5}}]}}"""
+        server.enqueue(json("{}", 403)); server.enqueue(json("{}", 403)); server.enqueue(json(sub))
+        val found = (api.searchSubreddits("dune") as ApiResult.Ok).value
+        assertEquals(listOf("/subreddits/search.json", "/search.json", "/api/subreddit_autocomplete_v2.json"), List(3) { server.takeRequest().requestUrl!!.encodedPath })
+        assertEquals(1, found.size)
+        server.enqueue(json("{}", 429))                                   // a non-block failure is reported at once, not retried elsewhere
+        assertEquals(Failure.RATE_LIMITED, (api.searchSubreddits("dune") as ApiResult.Failed).reason); assertEquals(4, server.requestCount)
+    }
+
     @Test fun searchAndSubscribeUseTheRightEndpoints() = runBlocking {
         server.enqueue(json(Fixtures.listing(Fixtures.imagePost)))
         api.searchPosts("kotlin", subreddit = "androiddev")
